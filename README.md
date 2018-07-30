@@ -1,3 +1,2 @@
-# my-typescript-template
-我的typescript项目模板。
-这套模板主要是针对nodejs程序的开发。
+# observable-variable
+包装变量或对象，当其值发生改变的时候可以通过事件监听。

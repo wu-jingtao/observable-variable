@@ -1,7 +1,7 @@
 {
-    "name": "my-typescript-template",
+    "name": "observable-variable",
     "version": "0.0.1",
-    "description": "我的typescript项目模板",
+    "description": "包装变量或对象，当其值发生改变的时候可以通过事件监听",
     "main": "./bin/index.js",
     "types": "./bin/index.d.ts",
     "scripts": {
@@ -9,23 +9,21 @@
         "compile": "gulp compile"
     },
     "keywords": [
-        "typescript",
-        "template"
+        "observable",
+        "variable"
     ],
     "author": "wujingtao",
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/mx601595686/my-typescript-template.git"
+        "url": "git+https://github.com/mx601595686/observable-variable.git"
     },
     "bugs": {
-        "url": "https://github.com/mx601595686/my-typescript-template/issues"
+        "url": "https://github.com/mx601595686/observable-variable/issues"
     },
-    "homepage": "https://github.com/mx601595686/my-typescript-template#readme",
+    "homepage": "https://github.com/mx601595686/observable-variable#readme",
     "devDependencies": {
-        "@types/component-emitter": "^1.2.6",
         "@types/expect.js": "^0.3.29",
-        "@types/lodash": "^4.14.85",
         "@types/mocha": "^5.2.5",
         "@types/node": "^10.5.4",
         "expect.js": "^0.3.1",
@@ -37,8 +35,5 @@
         "typescript": "^2.9.2"
     },
     "dependencies": {
-        "component-emitter": "^1.2.1",
-        "lodash": "^4.17.4",
-        "log-formatter": "^0.1.5"
     }
 }
