@@ -43,9 +43,9 @@ export class ObservableMap<T extends Map<K, V>, K, V> extends ObservableVariable
     constructor(value: ObservableMap<T, K, V> | T | [K, V][]) {
         super(value as T);
 
-        //能执行的这一步说明传入的值不是ObservableMap
-        if (Array.isArray(value))
-            this._value = new Map<K, V>(value) as T;
+        if (this !== value)
+            if (Array.isArray(value))
+                this._value = new Map<K, V>(value) as T;
     }
 
     //#endregion
@@ -109,10 +109,10 @@ export class ObservableMap<T extends Map<K, V>, K, V> extends ObservableVariable
 
     //#endregion
 
-    //#region 基本字典操作方法
+    //#region 字典修改操作方法
 
     /**
-     * 删除被观察字典中所有元素
+     * 移除Map对象中的所有元素。
      */
     clear(): void {
         if (this._onRemove.size > 0) {
@@ -125,7 +125,7 @@ export class ObservableMap<T extends Map<K, V>, K, V> extends ObservableVariable
     }
 
     /**
-     * 删除被观察字典中特定元素
+     * 用于移除 Map 对象中指定的元素。
      */
     delete(key: K): boolean {
         if (this._onRemove.size > 0) {
@@ -141,7 +141,7 @@ export class ObservableMap<T extends Map<K, V>, K, V> extends ObservableVariable
     }
 
     /**
-     * 添加或更新被观察字典中指定元素
+     * 为Map对象添加一个指定键（key）和值（value）的新元素。
      */
     set(key: K, value: V): this {
         if (this._onAdd.size > 0) {
@@ -156,12 +156,51 @@ export class ObservableMap<T extends Map<K, V>, K, V> extends ObservableVariable
         return this;
     }
 
-    entries() { }
-    forEach() { }
-    get() { }
-    has() { }
-    keys() { }
-    values() { }
+    //#endregion
+
+    //#region 字典读取操作方法
+
+    /**
+     * 返回一个新的包含 [key, value] 对的 Iterator 对象，返回的迭代器的迭代顺序与 Map 对象的插入顺序相同。
+     */
+    entries() {
+        return this._value.entries();
+    }
+
+    /**
+     * 以插入顺序对 Map 对象中的每一个键值对执行一次参数中提供的回调函数。
+     */
+    forEach(callbackfn: (value: V, key: K, map: Map<K, V>) => void, thisArg?: any): void {
+        this._value.forEach(callbackfn, thisArg);
+    }
+
+    /**
+     * 用来获取一个 Map 对象中指定的元素。
+     */
+    get(key: K): V {
+        return this._value.get(key) as V;
+    }
+
+    /**
+     * 返回一个bool值，用来表明map 中是否存在指定元素
+     */
+    has(key: K): boolean {
+        return this._value.has(key);
+    }
+
+    /**
+     * 返回一个新的 Iterator 对象。它包含按照顺序插入Map对象中每个元素的key值。
+     */
+    keys() {
+        return this._value.keys();
+    }
+
+    /**
+     * 返回一个新的Iterator对象。它包含按顺序插入Map对象中每个元素的value值。
+     */
+    values() {
+        return this._value.values();
+    }
 
     //#endregion
 }

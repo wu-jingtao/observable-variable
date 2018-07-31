@@ -8,7 +8,7 @@ export class ObservableVariable<T>{
     /**
      * 将一个变量转换成可观察变量，相当于 new ObservableVariable(value)
      */
-    static observe<T>(value: T): ObservableVariable<T>;
+    static observe<T>(value: ObservableVariable<T> | T): ObservableVariable<T>;
     /**
      * 将对象中指定位置的一个变量转换成可观察变量，路径通过`.`分割
      */
@@ -38,10 +38,16 @@ export class ObservableVariable<T>{
     protected _value: T;  //保存的变量值
     protected _onSet: Set<OnSetCallback<T>> = new Set();
 
-    constructor(value: T) {
+    constructor(value: ObservableVariable<T> | T) {
         //确保不重复包裹变量
-        if (value instanceof ObservableVariable)
+        if (value instanceof ObservableVariable) {
+            /**
+             * 如果造中使用了return，那么不管是父类还是子类的原型都将不会附加到该对象上
+             * 构造函数也就退化成了普通方法
+             * 子类构造中的this等于return的返回值
+             */
             return value;
+        }
 
         this._value = value;
     }
@@ -66,7 +72,7 @@ export class ObservableVariable<T>{
      */
     public serializable: boolean = true;
 
-    private toJSON() {
+    protected toJSON(): any {
         return this.serializable ? this._value : undefined;
     }
 
