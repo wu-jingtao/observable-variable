@@ -3,14 +3,14 @@ import { ObservableVariable, OnSetCallback } from "./ObservableVariable";
 /**
  * 可观察改变数组
  */
-export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T> {
+export class ObservableArray<T> extends ObservableVariable<T[]> {
 
     //#region 静态方法
 
     /**
      * 将一个数组转换成可观察数组，相当于 new ObservableArray(value)
      */
-    static observe<T extends Array<K>, K>(value: ObservableArray<T, K> | T): ObservableArray<T, K>;
+    static observe<T>(value: ObservableArray<T> | T[]): ObservableArray<T>;
     /**
      * 将对象中指定位置的一个数组转换成可观察数组，路径通过`.`分割
      */
@@ -37,8 +37,12 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
 
     //#region 属性
 
-    protected _onAdd: Set<OnAddOrRemoveArrayElementCallback<K>> = new Set();
-    protected _onRemove: Set<OnAddOrRemoveArrayElementCallback<K>> = new Set();
+    protected _onAdd: Set<OnAddOrRemoveArrayElementCallback<T>> = new Set();
+    protected _onRemove: Set<OnAddOrRemoveArrayElementCallback<T>> = new Set();
+
+    constructor(value: ObservableArray<T> | T[]) {
+        super(value);
+    }
 
     //#endregion
 
@@ -47,15 +51,15 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
     /**
      * 当设置值的时候触发
      */
-    on(event: 'set', callback: OnSetCallback<T>): void;
+    on(event: 'set', callback: OnSetCallback<T[]>): void;
     /**
      * 当向数组中添加元素时触发
      */
-    on(event: 'add', callback: OnAddOrRemoveArrayElementCallback<K>): void;
+    on(event: 'add', callback: OnAddOrRemoveArrayElementCallback<T>): void;
     /**
      * 当删除数组中元素时触发
      */
-    on(event: 'remove', callback: OnAddOrRemoveArrayElementCallback<K>): void;
+    on(event: 'remove', callback: OnAddOrRemoveArrayElementCallback<T>): void;
     on(event: any, callback: any): any {
         switch (event) {
             case 'add':
@@ -72,17 +76,16 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
         }
     }
 
-    once(event: 'set', callback: OnSetCallback<T>): void;
-    once(event: 'add', callback: OnAddOrRemoveArrayElementCallback<K>): void;
-    once(event: 'remove', callback: OnAddOrRemoveArrayElementCallback<K>): void;
+    once(event: 'set', callback: OnSetCallback<T[]>): void;
+    once(event: 'add', callback: OnAddOrRemoveArrayElementCallback<T>): void;
+    once(event: 'remove', callback: OnAddOrRemoveArrayElementCallback<T>): void;
     once(event: any, callback: any): any {
-        const tempCallback = (...args: any[]) => { this.off(event, tempCallback); callback(...args); };
-        this.on(event, tempCallback);
+        super.once(event, callback);
     }
 
-    off(event: 'set', callback?: OnSetCallback<T>): void;
-    off(event: 'add', callback: OnAddOrRemoveArrayElementCallback<K>): void;
-    off(event: 'remove', callback: OnAddOrRemoveArrayElementCallback<K>): void;
+    off(event: 'set', callback?: OnSetCallback<T[]>): void;
+    off(event: 'add', callback: OnAddOrRemoveArrayElementCallback<T>): void;
+    off(event: 'remove', callback: OnAddOrRemoveArrayElementCallback<T>): void;
     off(event: any, callback: any): any {
         switch (event) {
             case 'add':
@@ -106,13 +109,13 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
     /**
      * 从数组中删除最后一个元素，并返回该元素的值。此方法更改数组的长度。
      */
-    pop(): K | undefined {
+    pop(): T | undefined {
         if (this._onRemove.size > 0) {
             const originalLength = this._value.length;
             const result = this._value.pop();
 
             if (originalLength > this._value.length)
-                this._onRemove.forEach(callback => callback(result as K));
+                this._onRemove.forEach(callback => callback(result as T));
 
             return result;
         } else
@@ -122,7 +125,7 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
     /**
      * 将一个或多个元素添加到数组的末尾，并返回新数组的长度。
      */
-    push(...items: K[]): number {
+    push(...items: T[]): number {
         if (this._onAdd.size > 0) {
             items.forEach(item => {
                 this._value.push(item);
@@ -137,13 +140,13 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
     /**
      * 从数组中删除第一个元素，并返回该元素的值。此方法更改数组的长度。
      */
-    shift(): K | undefined {
+    shift(): T | undefined {
         if (this._onRemove.size > 0) {
             const originalLength = this._value.length;
             const result = this._value.shift();
 
             if (originalLength > this._value.length)
-                this._onRemove.forEach(callback => callback(result as K));
+                this._onRemove.forEach(callback => callback(result as T));
 
             return result;
         } else
@@ -153,7 +156,7 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
     /**
      * 将一个或多个元素添加到数组的开头，并返回新数组的长度。
      */
-    unshift(...items: K[]): number {
+    unshift(...items: T[]): number {
         if (this._onAdd.size > 0) {
             items.forEach((item, index) => {
                 this._value.splice(index, 0, item);
@@ -169,17 +172,17 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
      * 从指定位置开始删除数组剩下的元素
      * @param start 从哪开始删除元素
      */
-    splice(start: number, deleteCount?: number): K[];
+    splice(start: number, deleteCount?: number): T[];
     /**
      * 改变数组的内容，通过移除或添加新元素
      * @param start 从哪开始删除元素
      * @param deleteCount 删除多少个元素
      * @param items 要插入的元素
      */
-    splice(start: number, deleteCount: number, ...items: K[]): K[];
-    splice(start: number, deleteCount?: number, ...items: K[]): K[] {
+    splice(start: number, deleteCount: number, ...items: T[]): T[];
+    splice(start: number, deleteCount?: number, ...items: T[]): T[] {
         if (this._onAdd.size > 0 || this._onRemove.size > 0) {
-            let deleteElements: K[] = [];  //被删除的元素
+            let deleteElements: T[] = [];  //被删除的元素
 
             if (this._onRemove.size > 0) {
                 for (let index = 0, end = deleteCount === undefined || start + deleteCount > this._value.length ? this._value.length - start : deleteCount; index < end; index++) {
@@ -207,7 +210,7 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
      * 删除数组中第一个与之匹配的元素
      * @param value 要被删除的值
      */
-    delete(value: K): boolean {
+    delete(value: T): boolean {
         const index = this._value.indexOf(value);
 
         if (index !== -1) {
@@ -225,7 +228,7 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
      * 删除数组中所有与之匹配的元素
      * @param value 要被删除的值
      */
-    deleteAll(value: K): void {
+    deleteAll(value: T): void {
         while (this.delete(value));
     }
 
@@ -233,7 +236,7 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
      * 排序数组。注意，排序完成之后将触发onSet事件
      * @param compareFn 排序方法
      */
-    sort(compareFn?: (a: K, b: K) => number): this {
+    sort(compareFn?: (a: T, b: T) => number): this {
         this._value.sort(compareFn);
 
         if (this._onSet.size > 0)
@@ -260,7 +263,7 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
      * @param start 开始位置
      * @param end 结束位置
      */
-    fill(value: K, start?: number, end?: number): this {
+    fill(value: T, start?: number, end?: number): this {
         this._value.fill(value, start, end);
 
         if (this._onSet.size > 0)
@@ -288,7 +291,7 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
     /**
      * 用于合并两个或多个数组。此方法不会更改现有数组，而是返回一个新数组。
      */
-    concat(...items: ConcatArray<K>[]) {
+    concat(...items: ConcatArray<T>[]) {
         return this._value.concat(...items);
     }
 
@@ -302,53 +305,53 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
     /**
      * 测试数组的所有元素是否都通过了指定函数的测试。
      */
-    every(callbackfn: (value: K, index: number, array: K[]) => boolean, thisArg?: any): boolean {
+    every(callbackfn: (value: T, index: number, array: T[]) => boolean, thisArg?: any): boolean {
         return this._value.every(callbackfn, thisArg);
     }
 
     /**
      * 创建一个新数组, 其包含通过所提供函数实现的测试的所有元素。 
      */
-    filter<S extends K>(callbackfn: (value: K, index: number, array: K[]) => value is S, thisArg?: any): S[]
-    filter(callbackfn: (value: K, index: number, array: K[]) => any, thisArg?: any): K[]
-    filter(callbackfn: (value: K, index: number, array: K[]) => any, thisArg?: any): K[] {
+    filter<S extends T>(callbackfn: (value: T, index: number, array: T[]) => value is S, thisArg?: any): S[]
+    filter(callbackfn: (value: T, index: number, array: T[]) => any, thisArg?: any): T[]
+    filter(callbackfn: (value: T, index: number, array: T[]) => any, thisArg?: any): T[] {
         return this._value.filter(callbackfn, thisArg);
     }
 
     /**
      * 返回数组中满足提供的测试函数的第一个元素的值。否则返回 undefined。
      */
-    find<S extends K>(predicate: (this: void, value: K, index: number, obj: K[]) => value is S, thisArg?: any): S | undefined
-    find(predicate: (value: K, index: number, obj: K[]) => boolean, thisArg?: any): K | undefined
-    find(predicate: (value: K, index: number, obj: K[]) => boolean, thisArg?: any): K | undefined {
+    find<S extends T>(predicate: (this: void, value: T, index: number, obj: T[]) => value is S, thisArg?: any): S | undefined
+    find(predicate: (value: T, index: number, obj: T[]) => boolean, thisArg?: any): T | undefined
+    find(predicate: (value: T, index: number, obj: T[]) => boolean, thisArg?: any): T | undefined {
         return this._value.find(predicate, thisArg);
     }
 
     /**
      * 返回数组中满足提供的测试函数的第一个元素的索引。否则返回-1。
      */
-    findIndex(predicate: (value: K, index: number, obj: K[]) => boolean, thisArg?: any): number {
+    findIndex(predicate: (value: T, index: number, obj: T[]) => boolean, thisArg?: any): number {
         return this._value.findIndex(predicate);
     }
 
     /**
      * 对数组的每个元素执行一次提供的函数。
      */
-    forEach(callbackfn: (value: K, index: number, array: K[]) => void, thisArg?: any): void {
+    forEach(callbackfn: (value: T, index: number, array: T[]) => void, thisArg?: any): void {
         this._value.forEach(callbackfn);
     }
 
     /**
      * 用来判断一个数组是否包含一个指定的值，根据情况，如果包含则返回 true，否则返回false。
      */
-    includes(searchElement: K, fromIndex?: number): boolean {
+    includes(searchElement: T, fromIndex?: number): boolean {
         return this._value.includes(searchElement, fromIndex);
     }
 
     /**
      * 返回在数组中可以找到一个给定元素的第一个索引，如果不存在，则返回-1。
      */
-    indexOf(searchElement: K, fromIndex?: number): number {
+    indexOf(searchElement: T, fromIndex?: number): number {
         return this._value.indexOf(searchElement, fromIndex);
     }
 
@@ -369,23 +372,23 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
     /**
      * 返回指定元素（也即有效的 JavaScript 值或变量）在数组中的最后一个的索引，如果不存在则返回 -1。从数组的后面向前查找，从 fromIndex 处开始。
      */
-    lastIndexOf(searchElement: K, fromIndex?: number): number {
+    lastIndexOf(searchElement: T, fromIndex?: number): number {
         return this._value.lastIndexOf(searchElement, fromIndex);
     }
 
     /**
      * 创建一个新数组，其结果是该数组中的每个元素都调用一个提供的函数后返回的结果。
      */
-    map<U>(callbackfn: (value: K, index: number, array: K[]) => U, thisArg?: any): U[] {
+    map<U>(callbackfn: (value: T, index: number, array: T[]) => U, thisArg?: any): U[] {
         return this._value.map(callbackfn);
     }
 
     /**
      * 对累加器和数组中的每个元素（从左到右）应用一个函数，将其减少为单个值。
      */
-    reduce(callbackfn: (previousValue: K, currentValue: K, currentIndex: number, array: K[]) => K): K
-    reduce(callbackfn: (previousValue: K, currentValue: K, currentIndex: number, array: K[]) => K, initialValue: K): K
-    reduce<U>(callbackfn: (previousValue: U, currentValue: K, currentIndex: number, array: K[]) => U, initialValue: U): U
+    reduce(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T): T
+    reduce(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T, initialValue: T): T
+    reduce<U>(callbackfn: (previousValue: U, currentValue: T, currentIndex: number, array: T[]) => U, initialValue: U): U
     reduce(callbackfn: any, initialValue?: any): any {
         return this._value.reduce(callbackfn, initialValue);
     }
@@ -393,9 +396,9 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
     /**
      * 接受一个函数作为累加器（accumulator）和数组的每个值（从右到左）将其减少为单个值。
      */
-    reduceRight(callbackfn: (previousValue: K, currentValue: K, currentIndex: number, array: K[]) => K): K
-    reduceRight(callbackfn: (previousValue: K, currentValue: K, currentIndex: number, array: K[]) => K, initialValue: K): K
-    reduceRight<U>(callbackfn: (previousValue: U, currentValue: K, currentIndex: number, array: K[]) => U, initialValue: U): U
+    reduceRight(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T): T
+    reduceRight(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T, initialValue: T): T
+    reduceRight<U>(callbackfn: (previousValue: U, currentValue: T, currentIndex: number, array: T[]) => U, initialValue: U): U
     reduceRight(callbackfn: any, initialValue?: any): any {
         return this._value.reduceRight(callbackfn, initialValue);
     }
@@ -403,14 +406,14 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
     /**
      * 返回一个从开始到结束（不包括结束）选择的数组的一部分浅拷贝到一个新数组对象。且原始数组不会被修改。
      */
-    slice(start?: number, end?: number): K[] {
+    slice(start?: number, end?: number): T[] {
         return this._value.slice(start, end);
     }
 
     /**
      * 测试数组中的某些元素是否通过由提供的函数实现的测试。
      */
-    some(callbackfn: (value: K, index: number, array: K[]) => boolean, thisArg?: any): boolean {
+    some(callbackfn: (value: T, index: number, array: T[]) => boolean, thisArg?: any): boolean {
         return this._value.some(callbackfn, thisArg);
     }
 
@@ -436,6 +439,6 @@ export class ObservableArray<T extends Array<K>, K> extends ObservableVariable<T
     }
 
     //#endregion
-}
 
-export interface OnAddOrRemoveArrayElementCallback<K> { (value: K): void };
+}
+export interface OnAddOrRemoveArrayElementCallback<T> { (value: T): void };
