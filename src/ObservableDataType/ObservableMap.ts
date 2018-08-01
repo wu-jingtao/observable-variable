@@ -3,14 +3,14 @@ import { ObservableVariable, OnSetCallback } from "./ObservableVariable";
 /**
  * 可观察改变字典
  */
-export class ObservableMap<T extends Map<K, V>, K, V> extends ObservableVariable<T> {
+export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
 
     //#region 静态方法
 
     /**
      * 将一个数组转换成可观察字典，相当于 new ObservableMap(value)
      */
-    static observe<T extends Map<K, V>, K, V>(value: ObservableMap<T, K, V> | T | [K, V][]): ObservableMap<T, K, V>;
+    static observe<K, V>(value: ObservableMap<K, V> | Map<K, V> | ReadonlyArray<[K, V]>): ObservableMap<K, V>;
     /**
      * 将对象中指定位置的一个数组转换成可观察字典，路径通过`.`分割
      */
@@ -40,12 +40,20 @@ export class ObservableMap<T extends Map<K, V>, K, V> extends ObservableVariable
     protected _onAdd: Set<OnAddOrRemoveMapElementCallback<K, V>> = new Set();
     protected _onRemove: Set<OnAddOrRemoveMapElementCallback<K, V>> = new Set();
 
-    constructor(value: ObservableMap<T, K, V> | T | [K, V][]) {
-        super(value as T);
+    constructor(value: ObservableMap<K, V> | Map<K, V> | ReadonlyArray<[K, V]>) {
+        super(value as any);
 
         if (this !== value)
             if (Array.isArray(value))
-                this._value = new Map<K, V>(value) as T;
+                this._value = new Map(value);
+    }
+
+    //#endregion
+
+    //#region toJSON
+
+    protected toJSON(): any {
+        return this.serializable ? [...this._value] : undefined;
     }
 
     //#endregion
@@ -55,7 +63,7 @@ export class ObservableMap<T extends Map<K, V>, K, V> extends ObservableVariable
     /**
      * 当设置值的时候触发
      */
-    on(event: 'set', callback: OnSetCallback<T>): void;
+    on(event: 'set', callback: OnSetCallback<Map<K, V>>): void;
     /**
      * 当向字典中添加元素时触发
      */
@@ -80,17 +88,16 @@ export class ObservableMap<T extends Map<K, V>, K, V> extends ObservableVariable
         }
     }
 
-    once(event: 'set', callback: OnSetCallback<T>): void;
+    once(event: 'set', callback: OnSetCallback<Map<K, V>>): void;
     once(event: 'add', callback: OnAddOrRemoveMapElementCallback<K, V>): void;
     once(event: 'remove', callback: OnAddOrRemoveMapElementCallback<K, V>): void;
     once(event: any, callback: any): any {
-        const tempCallback = (...args: any[]) => { this.off(event, tempCallback); callback(...args); };
-        this.on(event, tempCallback);
+        super.once(event, callback);
     }
 
-    off(event: 'set', callback?: OnSetCallback<T>): void;
-    off(event: 'add', callback: OnAddOrRemoveMapElementCallback<K, V>): void;
-    off(event: 'remove', callback: OnAddOrRemoveMapElementCallback<K, V>): void;
+    off(event: 'set', callback?: OnSetCallback<Map<K, V>>): void;
+    off(event: 'add', callback?: OnAddOrRemoveMapElementCallback<K, V>): void;
+    off(event: 'remove', callback?: OnAddOrRemoveMapElementCallback<K, V>): void;
     off(event: any, callback: any): any {
         switch (event) {
             case 'add':
@@ -146,7 +153,7 @@ export class ObservableMap<T extends Map<K, V>, K, V> extends ObservableVariable
     set(key: K, value: V): this {
         if (this._onAdd.size > 0) {
             if (!this._value.has(key)) {
-                this.set(key, value);
+                this._value.set(key, value);
                 this._onAdd.forEach(callback => callback(value, key));
             } else
                 this._value.set(key, value);

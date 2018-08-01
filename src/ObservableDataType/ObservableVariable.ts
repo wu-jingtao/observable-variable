@@ -57,10 +57,12 @@ export class ObservableVariable<T>{
     }
 
     public set value(v: T) {
-        this._value = v;
-
-        if (this._onSet.size > 0)
-            this._onSet.forEach(callback => callback(v, this._value));
+        if (this._onSet.size > 0) {
+            const oldValue = this._value;
+            this._value = v;
+            this._onSet.forEach(callback => callback(v, oldValue));
+        } else
+            this._value = v;
     }
 
     //#endregion

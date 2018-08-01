@@ -84,8 +84,8 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     }
 
     off(event: 'set', callback?: OnSetCallback<T[]>): void;
-    off(event: 'add', callback: OnAddOrRemoveArrayElementCallback<T>): void;
-    off(event: 'remove', callback: OnAddOrRemoveArrayElementCallback<T>): void;
+    off(event: 'add', callback?: OnAddOrRemoveArrayElementCallback<T>): void;
+    off(event: 'remove', callback?: OnAddOrRemoveArrayElementCallback<T>): void;
     off(event: any, callback: any): any {
         switch (event) {
             case 'add':

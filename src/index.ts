@@ -3,7 +3,6 @@ import { ObservableArray } from "./ObservableDataType/ObservableArray";
 import { ObservableMap } from "./ObservableDataType/ObservableMap";
 import { ObservableSet } from "./ObservableDataType/ObservableSet";
 
-export { DynamicVariable } from "./ObservableDataType/DynamicVariable";
 export { ObservableVariable } from "./ObservableDataType/ObservableVariable";
 export { ObservableArray } from "./ObservableDataType/ObservableArray";
 export { ObservableMap } from "./ObservableDataType/ObservableMap";

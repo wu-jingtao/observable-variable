@@ -3,20 +3,20 @@ import { ObservableVariable, OnSetCallback } from "./ObservableVariable";
 /**
  * 可观察改变集合
  */
-export class ObservableSet<T extends Set<V>, V> extends ObservableVariable<T> {
+export class ObservableSet<T> extends ObservableVariable<Set<T>> {
 
     //#region 静态方法
 
     /**
-     * 将一个数组转换成可观察字典，相当于 new ObservableMap(value)
+     * 将一个数组转换成可观察集合，相当于 new ObservableSet(value)
      */
-    static observe<T extends Set<V>, V>(value: ObservableSet<T, V> | T | V[]): ObservableSet<T, V>;
+    static observe<T>(value: ObservableSet<T> | Set<T> | T[]): ObservableSet<T>;
     /**
-     * 将对象中指定位置的一个数组转换成可观察字典，路径通过`.`分割
+     * 将对象中指定位置的一个数组转换成可观察集合，路径通过`.`分割
      */
     static observe(object: object, path: string): void;
     /**
-     * 将对象中指定位置的一个数组转换成可观察字典
+     * 将对象中指定位置的一个数组转换成可观察集合
      */
     static observe(object: object, path: string[]): void;
     static observe(value: any, path?: any): any {
@@ -37,33 +37,41 @@ export class ObservableSet<T extends Set<V>, V> extends ObservableVariable<T> {
 
     //#region 属性
 
-    protected _onAdd: Set<OnAddOrRemoveSetElementCallback<V>> = new Set();
-    protected _onRemove: Set<OnAddOrRemoveSetElementCallback<V>> = new Set();
+    protected _onAdd: Set<OnAddOrRemoveSetElementCallback<T>> = new Set();
+    protected _onRemove: Set<OnAddOrRemoveSetElementCallback<T>> = new Set();
 
-    constructor(value: ObservableSet<T, V> | T | V[]) {
-        super(value as T);
+    constructor(value: ObservableSet<T> | Set<T> | T[]) {
+        super(value as any);
 
         if (this !== value)
             if (Array.isArray(value))
-                this._value = new Set<V>(value) as T;
+                this._value = new Set(value);
     }
 
     //#endregion
+    
+    //#region toJSON
 
+    protected toJSON(): any {
+        return this.serializable ? [...this._value] : undefined;
+    }
+
+    //#endregion
+    
     //#region 事件绑定方法
 
     /**
      * 当设置值的时候触发
      */
-    on(event: 'set', callback: OnSetCallback<T>): void;
+    on(event: 'set', callback: OnSetCallback<Set<T>>): void;
     /**
      * 当向集合中添加元素时触发
      */
-    on(event: 'add', callback: OnAddOrRemoveSetElementCallback<V>): void;
+    on(event: 'add', callback: OnAddOrRemoveSetElementCallback<T>): void;
     /**
      * 当删除集合中元素时触发
      */
-    on(event: 'remove', callback: OnAddOrRemoveSetElementCallback<V>): void;
+    on(event: 'remove', callback: OnAddOrRemoveSetElementCallback<T>): void;
     on(event: any, callback: any): any {
         switch (event) {
             case 'add':
@@ -80,17 +88,16 @@ export class ObservableSet<T extends Set<V>, V> extends ObservableVariable<T> {
         }
     }
 
-    once(event: 'set', callback: OnSetCallback<T>): void;
-    once(event: 'add', callback: OnAddOrRemoveSetElementCallback<V>): void;
-    once(event: 'remove', callback: OnAddOrRemoveSetElementCallback<V>): void;
+    once(event: 'set', callback: OnSetCallback<Set<T>>): void;
+    once(event: 'add', callback: OnAddOrRemoveSetElementCallback<T>): void;
+    once(event: 'remove', callback: OnAddOrRemoveSetElementCallback<T>): void;
     once(event: any, callback: any): any {
-        const tempCallback = (...args: any[]) => { this.off(event, tempCallback); callback(...args); };
-        this.on(event, tempCallback);
+        super.once(event, callback);
     }
 
-    off(event: 'set', callback?: OnSetCallback<T>): void;
-    off(event: 'add', callback: OnAddOrRemoveSetElementCallback<V>): void;
-    off(event: 'remove', callback: OnAddOrRemoveSetElementCallback<V>): void;
+    off(event: 'set', callback?: OnSetCallback<Set<T>>): void;
+    off(event: 'add', callback?: OnAddOrRemoveSetElementCallback<T>): void;
+    off(event: 'remove', callback?: OnAddOrRemoveSetElementCallback<T>): void;
     off(event: any, callback: any): any {
         switch (event) {
             case 'add':
@@ -127,7 +134,7 @@ export class ObservableSet<T extends Set<V>, V> extends ObservableVariable<T> {
     /**
      * 从一个 Set 对象中删除指定的元素。
      */
-    delete(value: V): boolean {
+    delete(value: T): boolean {
         if (this._onRemove.size > 0) {
             const result = this._value.delete(value);
             if (result) this._onRemove.forEach(callback => callback(value));
@@ -139,10 +146,10 @@ export class ObservableSet<T extends Set<V>, V> extends ObservableVariable<T> {
     /**
      * 用来向一个 Set 对象的末尾添加一个指定的值。
      */
-    add(value: V): this {
+    add(value: T): this {
         if (this._onAdd.size > 0) {
             if (!this._value.has(value)) {
-                this.add(value);
+                this._value.add(value);
                 this._onAdd.forEach(callback => callback(value));
             }
         } else
@@ -165,14 +172,14 @@ export class ObservableSet<T extends Set<V>, V> extends ObservableVariable<T> {
     /**
      * 根据集合中元素的顺序，对每个元素都执行提供的 callback 函数一次。
      */
-    forEach(callbackfn: (value: V, value2: V, set: Set<V>) => void, thisArg?: any): void {
+    forEach(callbackfn: (value: T, value2: T, set: Set<T>) => void, thisArg?: any): void {
         this._value.forEach(callbackfn, thisArg);
     }
 
     /**
      * 返回一个布尔值来指示对应的值value是否存在Set对象中
      */
-    has(value: V): boolean {
+    has(value: T): boolean {
         return this._value.has(value);
     }
 
@@ -191,14 +198,6 @@ export class ObservableSet<T extends Set<V>, V> extends ObservableVariable<T> {
     }
 
     //#endregion
-
-    //#region toJSON
-
-    protected toJSON(): any {
-        return this.serializable ? [...this._value] : undefined;
-    }
-
-    //#endregion
 }
 
-export interface OnAddOrRemoveSetElementCallback<V> { (value: V): void };
+export interface OnAddOrRemoveSetElementCallback<T> { (value: T): void };
