@@ -48,6 +48,13 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
                 this._value = new Set(value);
     }
 
+    /**
+     * 集合元素个数
+     */
+    get size(){
+        return this._value.size;
+    }
+
     //#endregion
     
     //#region toJSON

@@ -1,4 +1,5 @@
 import expect = require('expect.js');
+import * as _ from 'lodash';
 
 import { ObservableVariable, ObservableArray, ObservableMap, ObservableSet } from '../src';
 
@@ -119,6 +120,20 @@ it('测试toJSON', function () {
     expect(JSON.stringify(oa)).to.be('["oa"]');
     expect(JSON.stringify(om)).to.be('[["om",456]]');
     expect(JSON.stringify(os)).to.be('["os"]');
+});
+
+it('测试 元素个数属性', function () {
+    const oa = new ObservableArray(['oa']);
+    const om = new ObservableMap([['om', 123], ['om', 456]]);
+    const os = new ObservableSet(['os', 'os']);
+
+    expect(oa.length).to.be(1);
+    expect(om.size).to.be(1);
+    expect(os.size).to.be(1);
+
+    oa.length = 0;
+
+    expect(oa.length).to.be(0);
 });
 
 describe('测试事件', function () {
@@ -305,6 +320,309 @@ describe('测试事件', function () {
             'b', 'b',
             s2, s1, s2, s1, s2, s1,
             s3, s2
+        ]);
+    });
+});
+
+describe('测试ObservableArray 修改操作方法', function () {
+
+    it('测试 pop', function () {
+        const testResult: any[] = [];
+
+        const obj = new ObservableArray([1, 2]);
+        obj.on('remove', value => testResult.push(value));
+
+        expect(obj.pop()).to.be(2);
+        expect(obj.pop()).to.be(1);
+        expect(obj.pop()).to.be(undefined);
+        expect(obj.value.length).to.be(0);
+        expect(testResult).to.eql([2, 1]);
+    });
+
+    it('测试 push', function () {
+        const testResult: any[] = [];
+
+        const obj = new ObservableArray<number>([]);
+        obj.on('add', value => testResult.push(value));
+
+        expect(obj.push(1)).to.be(1);
+        expect(obj.push(2)).to.be(2);
+        expect(obj.push(3, 4)).to.be(4);
+        expect(obj.value.length).to.be(4);
+        expect(obj.value).to.eql([1, 2, 3, 4]);
+        expect(testResult).to.eql([1, 2, 3, 4]);
+    });
+
+    it('测试 shift', function () {
+        const testResult: any[] = [];
+
+        const obj = new ObservableArray([1, 2]);
+        obj.on('remove', value => testResult.push(value));
+
+        expect(obj.shift()).to.be(1);
+        expect(obj.shift()).to.be(2);
+        expect(obj.shift()).to.be(undefined);
+        expect(obj.value.length).to.be(0);
+        expect(testResult).to.eql([1, 2]);
+    });
+
+    it('测试 unshift', function () {
+        const testResult: any[] = [];
+
+        const obj = new ObservableArray<number>([]);
+        obj.on('add', value => testResult.push(value));
+
+        expect(obj.unshift(1)).to.be(1);
+        expect(obj.unshift(2)).to.be(2);
+        expect(obj.unshift(3, 4)).to.be(4);
+        expect(obj.value.length).to.be(4);
+        expect(obj.value).to.eql([3, 4, 2, 1]);
+        expect(testResult).to.eql([1, 2, 3, 4]);
+    });
+
+    it('测试 splice', function () {
+        const testResult: any[] = [];
+
+        const testArray = new ObservableArray(actual());
+        testArray.on('add', value => testResult.push(value));
+        testArray.on('remove', value => testResult.push(value));
+
+        function actual() {
+            return _.range(10);
+        }
+
+        function test() {
+            testArray.value = _.range(10);
+            return testArray;
+        }
+
+        expect(test().splice(0)).to.eql(actual().splice(0));
+        expect(test().splice(0.9)).to.eql(actual().splice(0.9));
+        expect(test().splice(5)).to.eql(actual().splice(5));
+        expect(test().splice(999)).to.eql(actual().splice(999));
+        expect(test().splice(-0.9)).to.eql(actual().splice(-0.9));
+        expect(test().splice(-5)).to.eql(actual().splice(-5));
+        expect(test().splice(-999)).to.eql(actual().splice(-999));
+
+        expect(test().splice(1, 0)).to.eql(actual().splice(1, 0));
+        expect(test().splice(1, 0.9)).to.eql(actual().splice(1, 0.9));
+        expect(test().splice(1, 1)).to.eql(actual().splice(1, 1));
+        expect(test().splice(1, 100)).to.eql(actual().splice(1, 100));
+        expect(test().splice(1, -0.9)).to.eql(actual().splice(1, - 0.9));
+        expect(test().splice(1, -1)).to.eql(actual().splice(1, - 1));
+        expect(test().splice(1, -100)).to.eql(actual().splice(1, -100));
+
+        expect(test().splice(1, 0, 1)).to.eql(actual().splice(1, 0, 1));
+        expect(test().splice(1, 0, 2, 3, 4)).to.eql(actual().splice(1, 0, 2, 3, 4));
+        expect(test().splice(-1, 0, 1)).to.eql(actual().splice(-1, 0, 1));
+        expect(test().splice(-1, 0, 2, 3, 4)).to.eql(actual().splice(-1, 0, 2, 3, 4));
+
+        expect(testResult).to.eql([
+            ...actual().splice(0),
+            ...actual().splice(0.9),
+            ...actual().splice(5),
+            ...actual().splice(999),
+            ...actual().splice(-0.9),
+            ...actual().splice(-5),
+            ...actual().splice(-999),
+
+            ...actual().splice(1, 0),
+            ...actual().splice(1, 0.9),
+            ...actual().splice(1, 1),
+            ...actual().splice(1, 100),
+            ...actual().splice(1, -0.9),
+            ...actual().splice(1, -1),
+            ...actual().splice(1, -100),
+
+            ...actual().splice(1, 0, 1), 1,
+            ...actual().splice(1, 0, 2, 3, 4), 2, 3, 4,
+            ...actual().splice(-1, 0, 1), 1,
+            ...actual().splice(-1, 0, 2, 3, 4), 2, 3, 4,
+        ]);
+    });
+
+    it('测试 delete', function () {
+        const testResult: any[] = [];
+
+        const obj = new ObservableArray([1, 1, 2, 2]);
+        obj.on('remove', value => testResult.push(value));
+
+        expect(obj.delete(1)).to.be.ok();
+        expect(obj.delete(2)).to.be.ok();
+        expect(obj.value).to.eql([1, 2]);
+
+        expect(obj.delete(1)).to.be.ok();
+        expect(obj.delete(2)).to.be.ok();
+        expect(obj.value.length).to.be(0);
+
+        expect(obj.delete(1)).to.not.be.ok();
+        expect(obj.delete(2)).to.not.be.ok();
+
+        expect(testResult).to.eql([
+            1, 2, 1, 2
+        ]);
+    });
+
+    it('测试 deleteAll', function () {
+        const testResult: any[] = [];
+
+        const obj = new ObservableArray([1, 1, 2, 2]);
+        obj.on('remove', value => testResult.push(value));
+
+        obj.deleteAll(1);
+        obj.deleteAll(2);
+        expect(obj.value.length).to.be(0);
+
+        obj.deleteAll(1);
+        obj.deleteAll(2);
+
+        expect(testResult).to.eql([
+            1, 1, 2, 2
+        ]);
+    });
+
+    it('测试 sort', function (done) {
+        const obj = new ObservableArray([1, 4, 3, 2]);
+
+        obj.on('set', (newValue, oldValue) => {
+            expect(newValue).to.be(oldValue);
+            expect(obj.value).to.eql([1, 2, 3, 4]);
+            done();
+        });
+
+        expect(obj.sort()).to.be(obj);
+    });
+
+    it('测试 reverse', function (done) {
+        const obj = new ObservableArray([1, 2, 3, 4]);
+
+        obj.on('set', (newValue, oldValue) => {
+            expect(newValue).to.be(oldValue);
+            expect(obj.value).to.eql([4, 3, 2, 1]);
+            done();
+        });
+
+        expect(obj.reverse()).to.be(obj);
+    });
+
+    it('测试 fill', function (done) {
+        const obj = new ObservableArray([1, 2, 3, 4]);
+
+        obj.on('set', (newValue, oldValue) => {
+            expect(newValue).to.be(oldValue);
+            expect(obj.value).to.eql([1, 9, 9, 4]);
+            done();
+        });
+
+        expect(obj.fill(9, 1, 3)).to.be(obj);
+    });
+
+    it('测试 copyWithin', function (done) {
+        const obj = new ObservableArray([1, 2, 3, 4]);
+
+        obj.on('set', (newValue, oldValue) => {
+            expect(newValue).to.be(oldValue);
+            expect(obj.value).to.eql([1, 3, 3, 4]);
+            done();
+        });
+
+        expect(obj.copyWithin(1, 2, 3)).to.be(obj);
+    });
+});
+
+describe('测试ObservableMap 修改操作方法', function () {
+
+    it('测试 clear', function () {
+        const testResult: any[] = [];
+
+        const obj = new ObservableMap([['a', 1], ['b', 2]]);
+        obj.on('remove', (value, key) => testResult.push(key, value));
+
+        obj.clear();
+
+        expect(obj.value.size).to.be(0);
+        expect(testResult).to.eql([
+            'a', 1, 'b', 2
+        ]);
+    });
+
+    it('测试 delete', function () {
+        const testResult: any[] = [];
+
+        const obj = new ObservableMap([['a', 1]]);
+        obj.on('remove', (value, key) => testResult.push(key, value));
+
+        expect(obj.delete('a')).to.be.ok();
+        expect(obj.delete('a')).to.not.be.ok();
+        expect(obj.delete('b')).to.not.be.ok();
+
+        expect(obj.value.size).to.be(0);
+        expect(testResult).to.eql([
+            'a', 1
+        ]);
+    });
+
+    it('测试 set', function () {
+        const testResult: any[] = [];
+
+        const obj = new ObservableMap([['a', 1]]);
+        obj.on('add', (value, key) => testResult.push(key, value));
+
+        expect(obj.set('a', 2)).to.be(obj);
+        expect(obj.set('b', 3)).to.be(obj);
+
+        expect(obj.value.size).to.be(2);
+        expect(obj.value.get('a')).to.be(2);
+        expect(testResult).to.eql([
+            'b', 3
+        ]);
+    });
+});
+
+describe('测试ObservableSet 修改操作方法', function () {
+
+    it('测试 clear', function () {
+        const testResult: any[] = [];
+
+        const obj = new ObservableSet([1, 2]);
+        obj.on('remove', value => testResult.push(value));
+
+        obj.clear();
+
+        expect(obj.value.size).to.be(0);
+        expect(testResult).to.eql([
+            1, 2
+        ]);
+    });
+
+    it('测试 delete', function () {
+        const testResult: any[] = [];
+
+        const obj = new ObservableSet([1]);
+        obj.on('remove', value => testResult.push(value));
+
+        expect(obj.delete(1)).to.be.ok();
+        expect(obj.delete(1)).to.not.be.ok();
+        expect(obj.delete(2)).to.not.be.ok();
+
+        expect(obj.value.size).to.be(0);
+        expect(testResult).to.eql([
+            1
+        ]);
+    });
+
+    it('测试 add', function () {
+        const testResult: any[] = [];
+
+        const obj = new ObservableSet([1]);
+        obj.on('add', value => testResult.push(value));
+
+        expect(obj.add(1)).to.be(obj);
+        expect(obj.add(2)).to.be(obj);
+
+        expect(obj.value.size).to.be(2);
+        expect(testResult).to.eql([
+            2
         ]);
     });
 });

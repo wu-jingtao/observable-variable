@@ -1,22 +1,22 @@
 import { ObservableVariable, OnSetCallback } from "./ObservableVariable";
 
 /**
- * 可观察改变字典
+ * 可观察改变Map
  */
 export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
 
     //#region 静态方法
 
     /**
-     * 将一个数组转换成可观察字典，相当于 new ObservableMap(value)
+     * 将一个数组转换成可观察Map，相当于 new ObservableMap(value)
      */
     static observe<K, V>(value: ObservableMap<K, V> | Map<K, V> | ReadonlyArray<[K, V]>): ObservableMap<K, V>;
     /**
-     * 将对象中指定位置的一个数组转换成可观察字典，路径通过`.`分割
+     * 将对象中指定位置的一个数组转换成可观察Map，路径通过`.`分割
      */
     static observe(object: object, path: string): void;
     /**
-     * 将对象中指定位置的一个数组转换成可观察字典
+     * 将对象中指定位置的一个数组转换成可观察Map
      */
     static observe(object: object, path: string[]): void;
     static observe(value: any, path?: any): any {
@@ -48,6 +48,13 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
                 this._value = new Map(value);
     }
 
+    /**
+     * Map元素个数
+     */
+    get size(){
+        return this._value.size;
+    }
+
     //#endregion
 
     //#region toJSON
@@ -65,11 +72,11 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
      */
     on(event: 'set', callback: OnSetCallback<Map<K, V>>): void;
     /**
-     * 当向字典中添加元素时触发
+     * 当向Map中添加元素时触发
      */
     on(event: 'add', callback: OnAddOrRemoveMapElementCallback<K, V>): void;
     /**
-     * 当删除字典中元素时触发
+     * 当删除Map中元素时触发
      */
     on(event: 'remove', callback: OnAddOrRemoveMapElementCallback<K, V>): void;
     on(event: any, callback: any): any {
@@ -116,7 +123,7 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
 
     //#endregion
 
-    //#region 字典修改操作方法
+    //#region Map修改操作方法
 
     /**
      * 移除Map对象中的所有元素。
@@ -165,7 +172,7 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
 
     //#endregion
 
-    //#region 字典读取操作方法
+    //#region Map读取操作方法
 
     /**
      * 返回一个新的包含 [key, value] 对的 Iterator 对象，返回的迭代器的迭代顺序与 Map 对象的插入顺序相同。

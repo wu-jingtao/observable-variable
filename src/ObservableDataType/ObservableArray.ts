@@ -44,6 +44,17 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
         super(value);
     }
 
+    /**
+     * 数组的长度
+     */
+    get length() {
+        return this._value.length;
+    }
+
+    set length(v: number) {
+        this._value.length = v;
+    }
+
     //#endregion
 
     //#region 事件绑定方法
@@ -184,8 +195,13 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
         if (this._onAdd.size > 0 || this._onRemove.size > 0) {
             let deleteElements: T[] = [];  //被删除的元素
 
+            start = Math.trunc(start);
+            start = start < 0 ? Math.max(this._value.length + start, 0) : Math.min(start, this._value.length);
+
             if (this._onRemove.size > 0) {
-                for (let index = 0, end = deleteCount === undefined || start + deleteCount > this._value.length ? this._value.length - start : deleteCount; index < end; index++) {
+                deleteCount = deleteCount === undefined ? this._value.length - start : deleteCount < 0 ? 0 : Math.min(Math.trunc(deleteCount), this._value.length - start);
+
+                for (let index = 0; index < deleteCount; index++) {
                     const element = this._value.splice(start, 1)[0];
                     this._onRemove.forEach(callback => callback(element));
                     deleteElements.push(element);
