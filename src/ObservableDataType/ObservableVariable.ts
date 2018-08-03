@@ -49,6 +49,11 @@ export class ObservableVariable<T>{
             return value;
         }
 
+        /**
+         * 注意：如果要继承ObservableVariable，那么在子类的构造中
+         * 在执行super(value)之后一定要判断一下 if(this === value)
+         * 如果相等则说明是重复包裹，后面的代码则不应当执行
+         */
         this._value = value;
     }
 

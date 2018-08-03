@@ -397,25 +397,58 @@ describe('测试ObservableArray 修改操作方法', function () {
         }
 
         expect(test().splice(0)).to.eql(actual().splice(0));
+        expect(testArray.value).to.eql([]);
+
         expect(test().splice(0.9)).to.eql(actual().splice(0.9));
+        expect(testArray.value).to.eql([]);
+
         expect(test().splice(5)).to.eql(actual().splice(5));
+        expect(testArray.value).to.eql(_.range(5));
+
         expect(test().splice(999)).to.eql(actual().splice(999));
+        expect(testArray.value).to.eql(actual());
+
         expect(test().splice(-0.9)).to.eql(actual().splice(-0.9));
+        expect(testArray.value).to.eql([]);
+
         expect(test().splice(-5)).to.eql(actual().splice(-5));
+        expect(testArray.value).to.eql(_.range(5));
+
         expect(test().splice(-999)).to.eql(actual().splice(-999));
+        expect(testArray.value).to.eql([]);
 
         expect(test().splice(1, 0)).to.eql(actual().splice(1, 0));
+        expect(testArray.value).to.eql(_.range(10));
+
         expect(test().splice(1, 0.9)).to.eql(actual().splice(1, 0.9));
+        expect(testArray.value).to.eql(_.range(10));
+
         expect(test().splice(1, 1)).to.eql(actual().splice(1, 1));
+        expect(testArray.value).to.eql([0, 2, 3, 4, 5, 6, 7, 8, 9]);
+
         expect(test().splice(1, 100)).to.eql(actual().splice(1, 100));
+        expect(testArray.value).to.eql([0]);
+
         expect(test().splice(1, -0.9)).to.eql(actual().splice(1, - 0.9));
+        expect(testArray.value).to.eql(_.range(10));
+
         expect(test().splice(1, -1)).to.eql(actual().splice(1, - 1));
+        expect(testArray.value).to.eql(_.range(10));
+
         expect(test().splice(1, -100)).to.eql(actual().splice(1, -100));
+        expect(testArray.value).to.eql(_.range(10));
 
         expect(test().splice(1, 0, 1)).to.eql(actual().splice(1, 0, 1));
+        expect(testArray.value).to.eql([0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
         expect(test().splice(1, 0, 2, 3, 4)).to.eql(actual().splice(1, 0, 2, 3, 4));
+        expect(testArray.value).to.eql([0, 2, 3, 4, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
         expect(test().splice(-1, 0, 1)).to.eql(actual().splice(-1, 0, 1));
+        expect(testArray.value).to.eql([0, 1, 2, 3, 4, 5, 6, 7, 8, 1, 9]);
+
         expect(test().splice(-1, 0, 2, 3, 4)).to.eql(actual().splice(-1, 0, 2, 3, 4));
+        expect(testArray.value).to.eql([0, 1, 2, 3, 4, 5, 6, 7, 8, 2, 3, 4, 9]);
 
         expect(testResult).to.eql([
             ...actual().splice(0),
