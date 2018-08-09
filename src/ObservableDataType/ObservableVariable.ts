@@ -36,7 +36,8 @@ export class ObservableVariable<T>{
     //#region 属性
 
     protected _value: T;  //保存的变量值
-    protected _onSet: Set<OnSetCallback<T>> = new Set();
+    protected _onSet: Set<(newValue: T, oldValue: T) => void> = new Set();
+    protected _onBeforeSet: (newValue: T, oldValue: T, oVar: ObservableVariable<T>) => boolean;
 
     constructor(value: ObservableVariable<T> | T) {
         //确保不重复包裹变量
@@ -62,6 +63,10 @@ export class ObservableVariable<T>{
     }
 
     public set value(v: T) {
+        if (this._onBeforeSet !== undefined)
+            if (this._onBeforeSet(v, this._value, this) === false)
+                return;
+
         if (this._onSet.size > 0) {
             const oldValue = this._value;
             this._value = v;
@@ -90,31 +95,43 @@ export class ObservableVariable<T>{
     /**
      * 当设置值的时候触发
      */
-    on(event: 'set', callback: OnSetCallback<T>): void;
+    on(event: 'set', callback: (newValue: T, oldValue: T) => void): void;
+    /**
+     * 在值发生改变之前触发，返回void或true表示同意更改，返回false表示阻止更改。注意：该回调只允许设置一个，重复设置将覆盖之前的回调
+     */
+    on(event: 'beforeSet', callback: (newValue: T, oldValue: T, oVar: this) => boolean): void;
     on(event: any, callback: any): any {
         switch (event) {
             case 'set':
                 this._onSet.add(callback);
                 break;
+
+            case 'beforeSet':
+                this._onBeforeSet = callback;
+                break;
         }
     }
 
-    once(event: 'set', callback: OnSetCallback<T>): void;
+    once(event: 'set', callback: (newValue: T, oldValue: T) => void): void;
+    once(event: 'beforeSet', callback: (newValue: T, oldValue: T, oVar: this) => boolean): void;
     once(event: any, callback: any): any {
         const tempCallback = (...args: any[]) => { this.off(event, tempCallback); callback(...args); };
         this.on(event, tempCallback);
     }
 
-    off(event: 'set', callback?: OnSetCallback<T>): void;
+    off(event: 'set', callback?: (newValue: T, oldValue: T) => void): void;
+    off(event: 'beforeSet', callback?: (newValue: T, oldValue: T, oVar: this) => boolean): void;
     off(event: any, callback: any): any {
         switch (event) {
             case 'set':
                 callback ? this._onSet.delete(callback) : this._onSet.clear();
+                break;
+
+            case 'beforeSet':
+                this._onBeforeSet = undefined as any;
                 break;
         }
     }
 
     //#endregion
 }
-
-export interface OnSetCallback<T> { (newValue: T, oldValue: T): void; }

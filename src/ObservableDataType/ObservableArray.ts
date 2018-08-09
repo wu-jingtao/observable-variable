@@ -1,4 +1,4 @@
-import { ObservableVariable, OnSetCallback } from "./ObservableVariable";
+import { ObservableVariable } from "./ObservableVariable";
 
 /**
  * 可观察改变数组
@@ -37,8 +37,8 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
 
     //#region 属性
 
-    protected _onAdd: Set<OnAddOrRemoveArrayElementCallback<T>> = new Set();
-    protected _onRemove: Set<OnAddOrRemoveArrayElementCallback<T>> = new Set();
+    protected _onAdd: Set<(value: T) => void> = new Set();
+    protected _onRemove: Set<(value: T) => void> = new Set();
 
     constructor(value: ObservableArray<T> | T[]) {
         super(value);
@@ -62,15 +62,19 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     /**
      * 当设置值的时候触发
      */
-    on(event: 'set', callback: OnSetCallback<T[]>): void;
+    on(event: 'set', callback: (newValue: T[], oldValue: T[]) => void): void;
+    /**
+     * 在值发生改变之前触发，返回void或true表示同意更改，返回false表示阻止更改。注意：该回调只允许设置一个，重复设置将覆盖之前的回调
+     */
+    on(event: 'beforeSet', callback: (newValue: T[], oldValue: T[], oArr: this) => boolean): void;
     /**
      * 当向数组中添加元素时触发
      */
-    on(event: 'add', callback: OnAddOrRemoveArrayElementCallback<T>): void;
+    on(event: 'add', callback: (value: T) => void): void;
     /**
      * 当删除数组中元素时触发
      */
-    on(event: 'remove', callback: OnAddOrRemoveArrayElementCallback<T>): void;
+    on(event: 'remove', callback: (value: T) => void): void;
     on(event: any, callback: any): any {
         switch (event) {
             case 'add':
@@ -87,16 +91,18 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
         }
     }
 
-    once(event: 'set', callback: OnSetCallback<T[]>): void;
-    once(event: 'add', callback: OnAddOrRemoveArrayElementCallback<T>): void;
-    once(event: 'remove', callback: OnAddOrRemoveArrayElementCallback<T>): void;
+    once(event: 'set', callback: (newValue: T[], oldValue: T[]) => void): void;
+    once(event: 'beforeSet', callback: (newValue: T[], oldValue: T[], oArr: this) => boolean): void;
+    once(event: 'add', callback: (value: T) => void): void;
+    once(event: 'remove', callback: (value: T) => void): void;
     once(event: any, callback: any): any {
         super.once(event, callback);
     }
 
-    off(event: 'set', callback?: OnSetCallback<T[]>): void;
-    off(event: 'add', callback?: OnAddOrRemoveArrayElementCallback<T>): void;
-    off(event: 'remove', callback?: OnAddOrRemoveArrayElementCallback<T>): void;
+    off(event: 'set', callback?: (newValue: T[], oldValue: T[]) => void): void;
+    off(event: 'beforeSet', callback?: (newValue: T[], oldValue: T[], oArr: this) => boolean): void;
+    off(event: 'add', callback?: (value: T) => void): void;
+    off(event: 'remove', callback?: (value: T) => void): void;
     off(event: any, callback: any): any {
         switch (event) {
             case 'add':
@@ -455,6 +461,4 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     }
 
     //#endregion
-
 }
-export interface OnAddOrRemoveArrayElementCallback<T> { (value: T): void };
