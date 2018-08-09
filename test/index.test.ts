@@ -132,6 +132,63 @@ describe('测试 toJSON', function () {
     });
 });
 
+describe('测试 readonly', function () {
+
+    it('测试ObservableVariable', function () {
+        const obj = new ObservableVariable('1');
+        obj.readonly = true;
+
+        expect(() => obj.value = '2').to.throwError(/尝试修改一个只读的 ObservableVariable/);
+    });
+
+    it('测试ObservableArray', function () {
+        const obj = new ObservableArray([1]);
+        obj.readonly = true;
+
+        expect(() => obj.value = [2]).to.throwError(/尝试修改一个只读的 ObservableArray/);
+
+        expect(obj.pop.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableArray/);
+        expect(obj.push.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableArray/);
+        expect(obj.shift.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableArray/);
+        expect(obj.unshift.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableArray/);
+        expect(obj.splice.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableArray/);
+        expect(obj.delete.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableArray/);
+        expect(obj.deleteAll.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableArray/);
+        expect(obj.sort.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableArray/);
+        expect(obj.reverse.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableArray/);
+        expect(obj.fill.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableArray/);
+        expect(obj.copyWithin.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableArray/);
+
+        expect(obj.value).to.eql([1]);
+    });
+
+    it('测试ObservableMap', function () {
+        const obj = new ObservableMap([['a', 1]]);
+        obj.readonly = true;
+
+        expect(() => obj.value = new Map([['b', 2]])).to.throwError(/尝试修改一个只读的 ObservableMap/);
+
+        expect(obj.clear.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableMap/);
+        expect(obj.delete.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableMap/);
+        expect(obj.set.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableMap/);
+
+        expect([...obj.value.entries()]).to.eql([['a', 1]]);
+    });
+
+    it('测试ObservableSet', function () {
+        const obj = new ObservableSet([1]);
+        obj.readonly = true;
+
+        expect(() => obj.value = new Set([2])).to.throwError(/尝试修改一个只读的 ObservableSet/);
+
+        expect(obj.clear.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableSet/);
+        expect(obj.delete.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableSet/);
+        expect(obj.add.bind(obj)).to.throwError(/尝试修改一个只读的 ObservableSet/);
+
+        expect([...obj.value.values()]).to.eql([1]);
+    });
+});
+
 it('测试 元素个数属性', function () {
     const oa = new ObservableArray(['oa']);
     const om = new ObservableMap([['om', 123], ['om', 456]]);
