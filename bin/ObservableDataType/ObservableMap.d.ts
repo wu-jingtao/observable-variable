@@ -1,4 +1,4 @@
-import { ObservableVariable, OnSetCallback } from "./ObservableVariable";
+import { ObservableVariable } from "./ObservableVariable";
 /**
  * 可观察改变Map
  */
@@ -15,8 +15,10 @@ export declare class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
      * 将对象中指定位置的一个数组转换成可观察Map
      */
     static observe(object: object, path: string[]): void;
-    protected _onAdd: Set<OnAddOrRemoveMapElementCallback<K, V>>;
-    protected _onRemove: Set<OnAddOrRemoveMapElementCallback<K, V>>;
+    protected _onAdd: Set<(value: V, key: K) => void>;
+    protected _onRemove: Set<(value: V, key: K) => void>;
+    protected _onUpdate: Set<(newValue: V, oldValue: V, key: K) => void>;
+    protected _onBeforeUpdate: (key: K, newValue: V, oldValue: V, map: Map<K, V>) => boolean;
     constructor(value: ObservableMap<K, V> | Map<K, V> | ReadonlyArray<[K, V]>);
     /**
      * Map元素个数
@@ -26,21 +28,40 @@ export declare class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
     /**
      * 当设置值的时候触发
      */
-    on(event: 'set', callback: OnSetCallback<Map<K, V>>): void;
+    on(event: 'set', callback: (newValue: Map<K, V>, oldValue: Map<K, V>) => void): void;
+    /**
+     * 在值发生改变之前触发，返回void或true表示同意更改，返回false表示阻止更改。注意：该回调只允许设置一个，重复设置将覆盖之前的回调
+     */
+    on(event: 'beforeSet', callback: (newValue: Map<K, V>, oldValue: Map<K, V>, oMap: this) => boolean): void;
+    /**
+     * 当更新Map中某个元素的值时触发
+     */
+    on(event: 'update', callback: (newValue: V, oldValue: V, key: K) => void): void;
+    /**
+     * 在更新Map中某个元素的值之前触发，返回void或true表示同意更改，返回false表示阻止更改。
+     * 注意：该回调只允许设置一个，重复设置将覆盖之前的回调。回调中的第四个参数"map" 是被包裹的Map对象，不是ObservableMap
+     */
+    on(event: 'beforeUpdate', callback: (key: K, newValue: V, oldValue: V, map: Map<K, V>) => boolean): void;
     /**
      * 当向Map中添加元素时触发
      */
-    on(event: 'add', callback: OnAddOrRemoveMapElementCallback<K, V>): void;
+    on(event: 'add', callback: (value: V, key: K) => void): void;
     /**
      * 当删除Map中元素时触发
      */
-    on(event: 'remove', callback: OnAddOrRemoveMapElementCallback<K, V>): void;
-    once(event: 'set', callback: OnSetCallback<Map<K, V>>): void;
-    once(event: 'add', callback: OnAddOrRemoveMapElementCallback<K, V>): void;
-    once(event: 'remove', callback: OnAddOrRemoveMapElementCallback<K, V>): void;
-    off(event: 'set', callback?: OnSetCallback<Map<K, V>>): void;
-    off(event: 'add', callback?: OnAddOrRemoveMapElementCallback<K, V>): void;
-    off(event: 'remove', callback?: OnAddOrRemoveMapElementCallback<K, V>): void;
+    on(event: 'remove', callback: (value: V, key: K) => void): void;
+    once(event: 'set', callback: (newValue: Map<K, V>, oldValue: Map<K, V>) => void): void;
+    once(event: 'beforeSet', callback: (newValue: Map<K, V>, oldValue: Map<K, V>, oMap: this) => boolean): void;
+    once(event: 'update', callback: (newValue: V, oldValue: V, key: K) => void): void;
+    once(event: 'beforeUpdate', callback: (key: K, newValue: V, oldValue: V, map: Map<K, V>) => boolean): void;
+    once(event: 'add', callback: (value: V, key: K) => void): void;
+    once(event: 'remove', callback: (value: V, key: K) => void): void;
+    off(event: 'set', callback?: (newValue: Map<K, V>, oldValue: Map<K, V>) => void): void;
+    off(event: 'beforeSet', callback?: (newValue: Map<K, V>, oldValue: Map<K, V>, oMap: this) => boolean): void;
+    off(event: 'update', callback?: (newValue: V, oldValue: V, key: K) => void): void;
+    off(event: 'beforeUpdate', callback?: (key: K, newValue: V, oldValue: V, map: Map<K, V>) => boolean): void;
+    off(event: 'add', callback?: (value: V, key: K) => void): void;
+    off(event: 'remove', callback?: (value: V, key: K) => void): void;
     /**
      * 移除Map对象中的所有元素。
      */
@@ -77,8 +98,5 @@ export declare class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
      * 返回一个新的Iterator对象。它包含按顺序插入Map对象中每个元素的value值。
      */
     values(): IterableIterator<V>;
-}
-export interface OnAddOrRemoveMapElementCallback<K, V> {
-    (value: V, key: K): void;
 }
 //# sourceMappingURL=ObservableMap.d.ts.map

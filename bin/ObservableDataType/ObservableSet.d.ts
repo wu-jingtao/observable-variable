@@ -1,4 +1,4 @@
-import { ObservableVariable, OnSetCallback } from "./ObservableVariable";
+import { ObservableVariable } from "./ObservableVariable";
 /**
  * 可观察改变集合
  */
@@ -15,8 +15,8 @@ export declare class ObservableSet<T> extends ObservableVariable<Set<T>> {
      * 将对象中指定位置的一个数组转换成可观察集合
      */
     static observe(object: object, path: string[]): void;
-    protected _onAdd: Set<OnAddOrRemoveSetElementCallback<T>>;
-    protected _onRemove: Set<OnAddOrRemoveSetElementCallback<T>>;
+    protected _onAdd: Set<(value: T) => void>;
+    protected _onRemove: Set<(value: T) => void>;
     constructor(value: ObservableSet<T> | Set<T> | T[]);
     /**
      * 集合元素个数
@@ -26,21 +26,27 @@ export declare class ObservableSet<T> extends ObservableVariable<Set<T>> {
     /**
      * 当设置值的时候触发
      */
-    on(event: 'set', callback: OnSetCallback<Set<T>>): void;
+    on(event: 'set', callback: (newValue: Set<T>, oldValue: Set<T>) => void): void;
+    /**
+     * 在值发生改变之前触发，返回void或true表示同意更改，返回false表示阻止更改。注意：该回调只允许设置一个，重复设置将覆盖之前的回调
+     */
+    on(event: 'beforeSet', callback: (newValue: Set<T>, oldValue: Set<T>, oSet: this) => boolean): void;
     /**
      * 当向集合中添加元素时触发
      */
-    on(event: 'add', callback: OnAddOrRemoveSetElementCallback<T>): void;
+    on(event: 'add', callback: (value: T) => void): void;
     /**
      * 当删除集合中元素时触发
      */
-    on(event: 'remove', callback: OnAddOrRemoveSetElementCallback<T>): void;
-    once(event: 'set', callback: OnSetCallback<Set<T>>): void;
-    once(event: 'add', callback: OnAddOrRemoveSetElementCallback<T>): void;
-    once(event: 'remove', callback: OnAddOrRemoveSetElementCallback<T>): void;
-    off(event: 'set', callback?: OnSetCallback<Set<T>>): void;
-    off(event: 'add', callback?: OnAddOrRemoveSetElementCallback<T>): void;
-    off(event: 'remove', callback?: OnAddOrRemoveSetElementCallback<T>): void;
+    on(event: 'remove', callback: (value: T) => void): void;
+    once(event: 'set', callback: (newValue: Set<T>, oldValue: Set<T>) => void): void;
+    once(event: 'beforeSet', callback: (newValue: Set<T>, oldValue: Set<T>, oSet: this) => boolean): void;
+    once(event: 'add', callback: (value: T) => void): void;
+    once(event: 'remove', callback: (value: T) => void): void;
+    off(event: 'set', callback?: (newValue: Set<T>, oldValue: Set<T>) => void): void;
+    off(event: 'beforeSet', callback?: (newValue: Set<T>, oldValue: Set<T>, oSet: this) => boolean): void;
+    off(event: 'add', callback?: (value: T) => void): void;
+    off(event: 'remove', callback?: (value: T) => void): void;
     /**
      * 用来清空一个 Set 对象中的所有元素。
      */
@@ -73,8 +79,5 @@ export declare class ObservableSet<T> extends ObservableVariable<Set<T>> {
      * 返回一个 Iterator  对象，这个对象以插入Set 对象的顺序包含了原 Set 对象里的每个元素。
      */
     values(): IterableIterator<T>;
-}
-export interface OnAddOrRemoveSetElementCallback<T> {
-    (value: T): void;
 }
 //# sourceMappingURL=ObservableSet.d.ts.map

@@ -15,8 +15,13 @@ export declare class ObservableVariable<T> {
      */
     static observe(object: object, path: string[]): void;
     protected _value: T;
-    protected _onSet: Set<OnSetCallback<T>>;
+    protected _onSet: Set<(newValue: T, oldValue: T) => void>;
+    protected _onBeforeSet: (newValue: T, oldValue: T, oVar: ObservableVariable<T>) => boolean;
     constructor(value: ObservableVariable<T> | T);
+    /**
+     * 该变量是否是只读的，默认false
+     */
+    readonly: boolean;
     value: T;
     /**
      * 该变量是否允许toJSON，默认true
@@ -26,11 +31,14 @@ export declare class ObservableVariable<T> {
     /**
      * 当设置值的时候触发
      */
-    on(event: 'set', callback: OnSetCallback<T>): void;
-    once(event: 'set', callback: OnSetCallback<T>): void;
-    off(event: 'set', callback?: OnSetCallback<T>): void;
-}
-export interface OnSetCallback<T> {
-    (newValue: T, oldValue: T): void;
+    on(event: 'set', callback: (newValue: T, oldValue: T) => void): void;
+    /**
+     * 在值发生改变之前触发，返回void或true表示同意更改，返回false表示阻止更改。注意：该回调只允许设置一个，重复设置将覆盖之前的回调
+     */
+    on(event: 'beforeSet', callback: (newValue: T, oldValue: T, oVar: this) => boolean): void;
+    once(event: 'set', callback: (newValue: T, oldValue: T) => void): void;
+    once(event: 'beforeSet', callback: (newValue: T, oldValue: T, oVar: this) => boolean): void;
+    off(event: 'set', callback?: (newValue: T, oldValue: T) => void): void;
+    off(event: 'beforeSet', callback?: (newValue: T, oldValue: T, oVar: this) => boolean): void;
 }
 //# sourceMappingURL=ObservableVariable.d.ts.map
