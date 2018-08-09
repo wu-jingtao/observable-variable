@@ -166,6 +166,9 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
      * 移除Map对象中的所有元素。
      */
     clear(): void {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         if (this._onRemove.size > 0) {
             this._value.forEach((value, key) => {
                 this._value.delete(key);
@@ -179,6 +182,9 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
      * 用于移除 Map 对象中指定的元素。
      */
     delete(key: K): boolean {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         if (this._onRemove.size > 0) {
             if (this._value.has(key)) {
                 const value = this._value.get(key);
@@ -195,6 +201,9 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
      * 为Map对象添加一个指定键（key）和值（value）的新元素。
      */
     set(key: K, value: V): this {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         if (this._value.has(key)) {
             const oldValue = this._value.get(key) as V;
 

@@ -134,6 +134,9 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
      * 用来清空一个 Set 对象中的所有元素。
      */
     clear(): void {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+            
         if (this._onRemove.size > 0) {
             this._value.forEach(value => {
                 this._value.delete(value);
@@ -147,6 +150,9 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
      * 从一个 Set 对象中删除指定的元素。
      */
     delete(value: T): boolean {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         if (this._onRemove.size > 0) {
             const result = this._value.delete(value);
             if (result) this._onRemove.forEach(callback => callback(value));
@@ -159,6 +165,9 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
      * 用来向一个 Set 对象的末尾添加一个指定的值。
      */
     add(value: T): this {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         if (this._onAdd.size > 0) {
             if (!this._value.has(value)) {
                 this._value.add(value);

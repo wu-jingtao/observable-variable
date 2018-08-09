@@ -58,11 +58,19 @@ export class ObservableVariable<T>{
         this._value = value;
     }
 
+    /**
+     * 该变量是否是只读的，默认false
+     */
+    public readonly = false;
+
     public get value(): T {
         return this._value;
     }
 
     public set value(v: T) {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         if (this._onBeforeSet !== undefined)
             if (this._onBeforeSet(v, this._value, this) === false)
                 return;

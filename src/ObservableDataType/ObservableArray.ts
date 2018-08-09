@@ -127,6 +127,9 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      * 从数组中删除最后一个元素，并返回该元素的值。此方法更改数组的长度。
      */
     pop(): T | undefined {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         if (this._onRemove.size > 0) {
             const originalLength = this._value.length;
             const result = this._value.pop();
@@ -143,6 +146,9 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      * 将一个或多个元素添加到数组的末尾，并返回新数组的长度。
      */
     push(...items: T[]): number {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         if (this._onAdd.size > 0) {
             items.forEach(item => {
                 this._value.push(item);
@@ -158,6 +164,9 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      * 从数组中删除第一个元素，并返回该元素的值。此方法更改数组的长度。
      */
     shift(): T | undefined {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         if (this._onRemove.size > 0) {
             const originalLength = this._value.length;
             const result = this._value.shift();
@@ -174,6 +183,9 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      * 将一个或多个元素添加到数组的开头，并返回新数组的长度。
      */
     unshift(...items: T[]): number {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         if (this._onAdd.size > 0) {
             items.forEach((item, index) => {
                 this._value.splice(index, 0, item);
@@ -198,6 +210,9 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      */
     splice(start: number, deleteCount: number, ...items: T[]): T[];
     splice(start: number, deleteCount?: number, ...items: T[]): T[] {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         if (this._onAdd.size > 0 || this._onRemove.size > 0) {
             let deleteElements: T[] = [];  //被删除的元素
 
@@ -233,6 +248,9 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      * @param value 要被删除的值
      */
     delete(value: T): boolean {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         const index = this._value.indexOf(value);
 
         if (index !== -1) {
@@ -259,6 +277,9 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      * @param compareFn 排序方法
      */
     sort(compareFn?: (a: T, b: T) => number): this {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         this._value.sort(compareFn);
 
         if (this._onSet.size > 0)
@@ -271,6 +292,9 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      * 反转数组中元素顺序。注意，反转完成之后将触发onSet事件
      */
     reverse(): this {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         this._value.reverse();
 
         if (this._onSet.size > 0)
@@ -286,6 +310,9 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      * @param end 结束位置
      */
     fill(value: T, start?: number, end?: number): this {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         this._value.fill(value, start, end);
 
         if (this._onSet.size > 0)
@@ -298,6 +325,9 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      * 浅复制数组的一部分到同一数组中的另一个位置，并返回它，而不修改其大小。注意，完成之后将触发onSet事件
      */
     copyWithin(target: number, start: number, end?: number): this {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
         this._value.copyWithin(target, start, end);
 
         if (this._onSet.size > 0)
