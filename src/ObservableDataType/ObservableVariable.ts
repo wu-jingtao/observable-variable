@@ -37,7 +37,7 @@ export class ObservableVariable<T>{
 
     protected _value: T;  //保存的变量值
     protected _onSet: Set<(newValue: T, oldValue: T) => void> = new Set();
-    protected _onBeforeSet: (newValue: T, oldValue: T, oVar: ObservableVariable<T>) => boolean;
+    protected _onBeforeSet: (newValue: T, oldValue: T, oVar: ObservableVariable<T>) => boolean | void;
 
     constructor(value: ObservableVariable<T> | T) {
         //确保不重复包裹变量
@@ -107,7 +107,7 @@ export class ObservableVariable<T>{
     /**
      * 在值发生改变之前触发，返回void或true表示同意更改，返回false表示阻止更改。注意：该回调只允许设置一个，重复设置将覆盖之前的回调
      */
-    on(event: 'beforeSet', callback: (newValue: T, oldValue: T, oVar: this) => boolean): void;
+    on(event: 'beforeSet', callback: (newValue: T, oldValue: T, oVar: this) => boolean | void): void;
     on(event: any, callback: any): any {
         switch (event) {
             case 'set':
@@ -121,14 +121,14 @@ export class ObservableVariable<T>{
     }
 
     once(event: 'set', callback: (newValue: T, oldValue: T) => void): void;
-    once(event: 'beforeSet', callback: (newValue: T, oldValue: T, oVar: this) => boolean): void;
+    once(event: 'beforeSet', callback: (newValue: T, oldValue: T, oVar: this) => boolean | void): void;
     once(event: any, callback: any): any {
         const tempCallback = (...args: any[]) => { this.off(event, tempCallback); return callback(...args); };
         this.on(event, tempCallback);
     }
 
     off(event: 'set', callback?: (newValue: T, oldValue: T) => void): void;
-    off(event: 'beforeSet', callback?: (newValue: T, oldValue: T, oVar: this) => boolean): void;
+    off(event: 'beforeSet', callback?: (newValue: T, oldValue: T, oVar: this) => boolean | void): void;
     off(event: any, callback: any): any {
         switch (event) {
             case 'set':

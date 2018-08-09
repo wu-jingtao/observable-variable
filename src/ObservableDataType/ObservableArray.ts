@@ -66,7 +66,7 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     /**
      * 在值发生改变之前触发，返回void或true表示同意更改，返回false表示阻止更改。注意：该回调只允许设置一个，重复设置将覆盖之前的回调
      */
-    on(event: 'beforeSet', callback: (newValue: T[], oldValue: T[], oArr: this) => boolean): void;
+    on(event: 'beforeSet', callback: (newValue: T[], oldValue: T[], oArr: this) => boolean | void): void;
     /**
      * 当向数组中添加元素时触发
      */
@@ -92,7 +92,7 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     }
 
     once(event: 'set', callback: (newValue: T[], oldValue: T[]) => void): void;
-    once(event: 'beforeSet', callback: (newValue: T[], oldValue: T[], oArr: this) => boolean): void;
+    once(event: 'beforeSet', callback: (newValue: T[], oldValue: T[], oArr: this) => boolean | void): void;
     once(event: 'add', callback: (value: T) => void): void;
     once(event: 'remove', callback: (value: T) => void): void;
     once(event: any, callback: any): any {
@@ -100,7 +100,7 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     }
 
     off(event: 'set', callback?: (newValue: T[], oldValue: T[]) => void): void;
-    off(event: 'beforeSet', callback?: (newValue: T[], oldValue: T[], oArr: this) => boolean): void;
+    off(event: 'beforeSet', callback?: (newValue: T[], oldValue: T[], oArr: this) => boolean | void): void;
     off(event: 'add', callback?: (value: T) => void): void;
     off(event: 'remove', callback?: (value: T) => void): void;
     off(event: any, callback: any): any {

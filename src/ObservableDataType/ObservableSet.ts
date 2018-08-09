@@ -74,7 +74,7 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
     /**
      * 在值发生改变之前触发，返回void或true表示同意更改，返回false表示阻止更改。注意：该回调只允许设置一个，重复设置将覆盖之前的回调
      */
-    on(event: 'beforeSet', callback: (newValue: Set<T>, oldValue: Set<T>, oSet: this) => boolean): void;
+    on(event: 'beforeSet', callback: (newValue: Set<T>, oldValue: Set<T>, oSet: this) => boolean | void): void;
     /**
      * 当向集合中添加元素时触发
      */
@@ -99,7 +99,7 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
         }
     }
     once(event: 'set', callback: (newValue: Set<T>, oldValue: Set<T>) => void): void;
-    once(event: 'beforeSet', callback: (newValue: Set<T>, oldValue: Set<T>, oSet: this) => boolean): void;
+    once(event: 'beforeSet', callback: (newValue: Set<T>, oldValue: Set<T>, oSet: this) => boolean | void): void;
     once(event: 'add', callback: (value: T) => void): void;
     once(event: 'remove', callback: (value: T) => void): void;
     once(event: any, callback: any): any {
@@ -107,7 +107,7 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
     }
 
     off(event: 'set', callback?: (newValue: Set<T>, oldValue: Set<T>) => void): void;
-    off(event: 'beforeSet', callback?: (newValue: Set<T>, oldValue: Set<T>, oSet: this) => boolean): void;
+    off(event: 'beforeSet', callback?: (newValue: Set<T>, oldValue: Set<T>, oSet: this) => boolean | void): void;
     off(event: 'add', callback?: (value: T) => void): void;
     off(event: 'remove', callback?: (value: T) => void): void;
     off(event: any, callback: any): any {
@@ -136,7 +136,7 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
     clear(): void {
         if (this.readonly)
             throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
-            
+
         if (this._onRemove.size > 0) {
             this._value.forEach(value => {
                 this._value.delete(value);
