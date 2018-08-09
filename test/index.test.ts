@@ -110,7 +110,7 @@ describe('测试创建可观察变量', function () {
     });
 });
 
-describe('测试 toJSON', function () {//todo 还没测试不支持序列化
+describe('测试 toJSON', function () {
     const testData = {
         ov: new ObservableVariable('ov'),
         oa: new ObservableArray(['oa']),
@@ -148,8 +148,9 @@ it('测试 元素个数属性', function () {
 
 describe('测试事件', function () {
     const testResult: any[] = [];
-    function callback(...args: any[]) { testResult.push(...args); }
-    function callback2(...args: any[]) { testResult.push(...args); }
+    function callback_void(...args: any[]) { testResult.push(...args); }
+    function callback_void2(...args: any[]) { testResult.push(...args); }
+    function callback_false(...args: any[]) { testResult.push(...args); return false; }
 
     afterEach(function () {
         testResult.length = 0;
@@ -158,14 +159,18 @@ describe('测试事件', function () {
     it('测试ObservableVariable', function () {
         const obj = new ObservableVariable('a');
 
-        obj.on('set', callback);
-        obj.on('set', callback2);
-        obj.once('set', callback);
-        obj.once('set', callback2);
+        obj.on('set', callback_void);
+        obj.on('set', callback_void2);
+        obj.once('set', callback_void);
+        obj.once('set', callback_void2);
+
+        obj.once('beforeSet', callback_false);
 
         obj.value = 'b';
 
-        obj.off('set', callback);
+        obj.value = 'b';
+
+        obj.off('set', callback_void);
 
         obj.value = 'c';
 
@@ -174,6 +179,7 @@ describe('测试事件', function () {
         obj.value = 'd';
 
         expect(testResult).to.eql([
+            'b', 'a', obj,
             'b', 'a', 'b', 'a', 'b', 'a', 'b', 'a',
             'c', 'b'
         ]);
@@ -182,23 +188,25 @@ describe('测试事件', function () {
     it('测试ObservableArray', function () {
         const obj = new ObservableArray<number | string>([1]);
 
-        obj.on('set', callback);
-        obj.on('set', callback2);
-        obj.once('set', callback);
+        obj.on('set', callback_void);
+        obj.on('set', callback_void2);
+        obj.once('set', callback_void);
 
-        obj.on('add', callback);
-        obj.on('add', callback2);
-        obj.once('add', callback);
+        obj.once('beforeSet', callback_false);
 
-        obj.on('remove', callback);
-        obj.on('remove', callback2);
-        obj.once('remove', callback);
+        obj.on('add', callback_void);
+        obj.on('add', callback_void2);
+        obj.once('add', callback_void);
+
+        obj.on('remove', callback_void);
+        obj.on('remove', callback_void2);
+        obj.once('remove', callback_void);
 
         obj.push('a');
         obj.pop();
 
-        obj.off('add', callback);
-        obj.off('remove', callback);
+        obj.off('add', callback_void);
+        obj.off('remove', callback_void);
 
         obj.push('b');
         obj.pop();
@@ -211,19 +219,22 @@ describe('测试事件', function () {
 
         obj.value = [2];
 
-        obj.off('set', callback);
-
         obj.value = [3];
+
+        obj.off('set', callback_void);
+
+        obj.value = [4];
 
         obj.off('set');
 
-        obj.value = [4];
+        obj.value = [5];
 
         expect(testResult).to.eql([
             'a', 'a', 'a', 'a', 'a', 'a',
             'b', 'b',
-            [2], [1], [2], [1], [2], [1],
-            [3], [2]
+            [2], [1], obj,
+            [3], [1], [3], [1], [3], [1],
+            [4], [3]
         ]);
     });
 
@@ -235,23 +246,31 @@ describe('测试事件', function () {
 
         const obj = new ObservableMap(m1)
 
-        obj.on('set', callback);
-        obj.on('set', callback2);
-        obj.once('set', callback);
+        obj.on('set', callback_void);
+        obj.on('set', callback_void2);
+        obj.once('set', callback_void);
 
-        obj.on('add', callback);
-        obj.on('add', callback2);
-        obj.once('add', callback);
+        obj.once('beforeSet', callback_false);
 
-        obj.on('remove', callback);
-        obj.on('remove', callback2);
-        obj.once('remove', callback);
+        obj.on('update', callback_void);
+        obj.on('update', callback_void2);
+        obj.once('update', callback_void);
+
+        obj.once('beforeUpdate', callback_false);
+
+        obj.on('add', callback_void);
+        obj.on('add', callback_void2);
+        obj.once('add', callback_void);
+
+        obj.on('remove', callback_void);
+        obj.on('remove', callback_void2);
+        obj.once('remove', callback_void);
 
         obj.set('a', 1);
         obj.delete('a');
 
-        obj.off('add', callback);
-        obj.off('remove', callback);
+        obj.off('add', callback_void);
+        obj.off('remove', callback_void);
 
         obj.set('b', 2);
         obj.delete('b');
@@ -262,9 +281,23 @@ describe('测试事件', function () {
         obj.set('c', 3);
         obj.delete('c');
 
+        obj.set('d', 1);
+        obj.set('d', 2);
+        obj.set('d', 3);
+
+        obj.off('update', callback_void);
+
+        obj.set('d', 4);
+
+        obj.off('update');
+
+        obj.set('d', 5);
+
         obj.value = m2;
 
-        obj.off('set', callback);
+        obj.value = m2;
+
+        obj.off('set', callback_void);
 
         obj.value = m3;
 
@@ -275,6 +308,10 @@ describe('测试事件', function () {
         expect(testResult).to.eql([
             1, 'a', 1, 'a', 1, 'a', 1, 'a', 1, 'a', 1, 'a',
             2, 'b', 2, 'b',
+            'd', 2, 1, m1,
+            3, 1, 'd', 3, 1, 'd', 3, 1, 'd',
+            4, 3, 'd',
+            m2, m1, obj,
             m2, m1, m2, m1, m2, m1,
             m3, m2
         ]);
@@ -288,23 +325,25 @@ describe('测试事件', function () {
 
         const obj = new ObservableSet(s1)
 
-        obj.on('set', callback);
-        obj.on('set', callback2);
-        obj.once('set', callback);
+        obj.on('set', callback_void);
+        obj.on('set', callback_void2);
+        obj.once('set', callback_void);
 
-        obj.on('add', callback);
-        obj.on('add', callback2);
-        obj.once('add', callback);
+        obj.once('beforeSet', callback_false);
 
-        obj.on('remove', callback);
-        obj.on('remove', callback2);
-        obj.once('remove', callback);
+        obj.on('add', callback_void);
+        obj.on('add', callback_void2);
+        obj.once('add', callback_void);
+
+        obj.on('remove', callback_void);
+        obj.on('remove', callback_void2);
+        obj.once('remove', callback_void);
 
         obj.add('a');
         obj.delete('a');
 
-        obj.off('add', callback);
-        obj.off('remove', callback);
+        obj.off('add', callback_void);
+        obj.off('remove', callback_void);
 
         obj.add('b');
         obj.delete('b');
@@ -317,7 +356,9 @@ describe('测试事件', function () {
 
         obj.value = s2;
 
-        obj.off('set', callback);
+        obj.value = s2;
+
+        obj.off('set', callback_void);
 
         obj.value = s3;
 
@@ -328,6 +369,7 @@ describe('测试事件', function () {
         expect(testResult).to.eql([
             'a', 'a', 'a', 'a', 'a', 'a',
             'b', 'b',
+            s2, s1, obj,
             s2, s1, s2, s1, s2, s1,
             s3, s2
         ]);

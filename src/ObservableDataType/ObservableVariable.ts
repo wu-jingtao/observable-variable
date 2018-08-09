@@ -123,7 +123,7 @@ export class ObservableVariable<T>{
     once(event: 'set', callback: (newValue: T, oldValue: T) => void): void;
     once(event: 'beforeSet', callback: (newValue: T, oldValue: T, oVar: this) => boolean): void;
     once(event: any, callback: any): any {
-        const tempCallback = (...args: any[]) => { this.off(event, tempCallback); callback(...args); };
+        const tempCallback = (...args: any[]) => { this.off(event, tempCallback); return callback(...args); };
         this.on(event, tempCallback);
     }
 
