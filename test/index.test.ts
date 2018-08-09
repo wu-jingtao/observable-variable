@@ -110,16 +110,26 @@ describe('测试创建可观察变量', function () {
     });
 });
 
-it('测试toJSON', function () {
-    const ov = new ObservableVariable('ov');
-    const oa = new ObservableArray(['oa']);
-    const om = new ObservableMap([['om', 123], ['om', 456]]);
-    const os = new ObservableSet(['os', 'os']);
+describe('测试 toJSON', function () {//todo 还没测试不支持序列化
+    const testData = {
+        ov: new ObservableVariable('ov'),
+        oa: new ObservableArray(['oa']),
+        om: new ObservableMap([['om', 123], ['om', 456]]),
+        os: new ObservableSet(['os', 'os'])
+    };
 
-    expect(JSON.stringify(ov)).to.be('"ov"');
-    expect(JSON.stringify(oa)).to.be('["oa"]');
-    expect(JSON.stringify(om)).to.be('[["om",456]]');
-    expect(JSON.stringify(os)).to.be('["os"]');
+    it('测试 可序列化', function () {
+        expect(JSON.stringify(testData)).to.be('{"ov":"ov","oa":["oa"],"om":[["om",456]],"os":["os"]}');
+    });
+
+    it('测试 不可序列化', function () {
+        testData.ov.serializable = false;
+        testData.oa.serializable = false;
+        testData.om.serializable = false;
+        testData.os.serializable = false;
+
+        expect(JSON.stringify(testData)).to.be('{}');
+    });
 });
 
 it('测试 元素个数属性', function () {
