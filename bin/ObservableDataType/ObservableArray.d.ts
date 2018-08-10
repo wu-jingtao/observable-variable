@@ -27,7 +27,7 @@ export declare class ObservableArray<T> extends ObservableVariable<T[]> {
      */
     on(event: 'set', callback: (newValue: T[], oldValue: T[]) => void): void;
     /**
-     * 在值发生改变之前触发，返回void或true表示同意更改，返回false表示阻止更改。注意：该回调只允许设置一个，重复设置将覆盖之前的回调
+     * 在值发生改变之前触发，返回void或true表示同意更改，返回false表示阻止更改。注意：该回调只允许设置一个，重复设置将覆盖之前的回调，同时设置的回调是以同步方式执行的
      */
     on(event: 'beforeSet', callback: (newValue: T[], oldValue: T[], oArr: this) => boolean | void): void;
     /**

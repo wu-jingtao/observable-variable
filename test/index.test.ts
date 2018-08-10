@@ -313,8 +313,6 @@ describe('测试事件', function () {
         obj.on('update', callback_void2);
         obj.once('update', callback_void);
 
-        obj.once('beforeUpdate', callback_false);
-
         obj.on('add', callback_void);
         obj.on('add', callback_void2);
         obj.once('add', callback_void);
@@ -340,15 +338,14 @@ describe('测试事件', function () {
 
         obj.set('d', 1);
         obj.set('d', 2);
-        obj.set('d', 3);
 
         obj.off('update', callback_void);
 
-        obj.set('d', 4);
+        obj.set('d', 3);
 
         obj.off('update');
 
-        obj.set('d', 5);
+        obj.set('d', 4);
 
         obj.value = m2;
 
@@ -365,9 +362,8 @@ describe('测试事件', function () {
         expect(testResult).to.eql([
             1, 'a', 1, 'a', 1, 'a', 1, 'a', 1, 'a', 1, 'a',
             2, 'b', 2, 'b',
-            'd', 2, 1, m1,
-            3, 1, 'd', 3, 1, 'd', 3, 1, 'd',
-            4, 3, 'd',
+            2, 1, 'd', 2, 1, 'd', 2, 1, 'd',
+            3, 2, 'd',
             m2, m1, obj,
             m2, m1, m2, m1, m2, m1,
             m3, m2
@@ -709,6 +705,7 @@ describe('测试ObservableMap 修改操作方法', function () {
 
         const obj = new ObservableMap([['a', 1]]);
         obj.on('add', (value, key) => testResult.push(key, value));
+        obj.on('update', (newValue, oldValue, key) => testResult.push(key, newValue, oldValue));
 
         expect(obj.set('a', 2)).to.be(obj);
         expect(obj.set('b', 3)).to.be(obj);
@@ -716,6 +713,7 @@ describe('测试ObservableMap 修改操作方法', function () {
         expect(obj.value.size).to.be(2);
         expect(obj.value.get('a')).to.be(2);
         expect(testResult).to.eql([
+            'a', 2, 1,
             'b', 3
         ]);
     });
