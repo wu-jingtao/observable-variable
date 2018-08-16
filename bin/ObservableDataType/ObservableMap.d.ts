@@ -29,9 +29,11 @@ export declare class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
      */
     on(event: 'set', callback: (newValue: Map<K, V>, oldValue: Map<K, V>) => void): void;
     /**
-     * 在值发生改变之前触发，返回void或true表示同意更改，返回false表示阻止更改。注意：该回调只允许设置一个，重复设置将覆盖之前的回调，同时设置的回调是以同步方式执行的
+     * 在值发生改变之前触发，返回false表示阻止更改，如果要更改newValue可以调用changeTo。
+     * 注意：该回调只允许设置一个，重复设置将覆盖之前的回调，同时设置的回调是以同步方式执行的。
+     * 注意：如果要执行changeTo，则就不应再返回false了，否则将使得changeTo无效。
      */
-    on(event: 'beforeSet', callback: (newValue: Map<K, V>, oldValue: Map<K, V>, oMap: this) => boolean | void): void;
+    on(event: 'beforeSet', callback: (newValue: Map<K, V>, oldValue: Map<K, V>, changeTo: (value: Map<K, V>) => void, oVar: this) => boolean | void): void;
     /**
      * 当更新Map中某个元素的值时触发
      */
@@ -45,12 +47,12 @@ export declare class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
      */
     on(event: 'remove', callback: (value: V, key: K) => void): void;
     once(event: 'set', callback: (newValue: Map<K, V>, oldValue: Map<K, V>) => void): void;
-    once(event: 'beforeSet', callback: (newValue: Map<K, V>, oldValue: Map<K, V>, oMap: this) => boolean | void): void;
+    once(event: 'beforeSet', callback: (newValue: Map<K, V>, oldValue: Map<K, V>, changeTo: (value: Map<K, V>) => void, oVar: this) => boolean | void): void;
     once(event: 'update', callback: (newValue: V, oldValue: V, key: K) => void): void;
     once(event: 'add', callback: (value: V, key: K) => void): void;
     once(event: 'remove', callback: (value: V, key: K) => void): void;
     off(event: 'set', callback?: (newValue: Map<K, V>, oldValue: Map<K, V>) => void): void;
-    off(event: 'beforeSet', callback?: (newValue: Map<K, V>, oldValue: Map<K, V>, oMap: this) => boolean | void): void;
+    off(event: 'beforeSet', callback?: (newValue: Map<K, V>, oldValue: Map<K, V>, changeTo: (value: Map<K, V>) => void, oVar: this) => boolean | void): void;
     off(event: 'update', callback?: (newValue: V, oldValue: V, key: K) => void): void;
     off(event: 'add', callback?: (value: V, key: K) => void): void;
     off(event: 'remove', callback?: (value: V, key: K) => void): void;

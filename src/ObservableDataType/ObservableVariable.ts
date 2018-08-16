@@ -37,7 +37,7 @@ export class ObservableVariable<T>{
 
     protected _value: T;  //保存的变量值
     protected _onSet: Set<(newValue: T, oldValue: T) => void> = new Set();
-    protected _onBeforeSet: (newValue: T, oldValue: T, oVar: ObservableVariable<T>) => boolean | void;
+    protected _onBeforeSet: (newValue: T, oldValue: T, changeTo: (value: T) => void, oVar: ObservableVariable<T>) => boolean | void;
 
     constructor(value: ObservableVariable<T> | T) {
         //确保不重复包裹变量
@@ -72,7 +72,7 @@ export class ObservableVariable<T>{
             throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
 
         if (this._onBeforeSet !== undefined)
-            if (this._onBeforeSet(v, this._value, this) === false)
+            if (this._onBeforeSet(v, this._value, (value: T) => { v = value; return; }, this) === false)
                 return;
 
         if (this._onSet.size > 0) {
@@ -105,9 +105,11 @@ export class ObservableVariable<T>{
      */
     on(event: 'set', callback: (newValue: T, oldValue: T) => void): void;
     /**
-     * 在值发生改变之前触发，返回void或true表示同意更改，返回false表示阻止更改。注意：该回调只允许设置一个，重复设置将覆盖之前的回调，同时设置的回调是以同步方式执行的
+     * 在值发生改变之前触发，返回false表示阻止更改，如果要更改newValue可以调用changeTo。
+     * 注意：该回调只允许设置一个，重复设置将覆盖之前的回调，同时设置的回调是以同步方式执行的。
+     * 注意：如果要执行changeTo，则就不应再返回false了，否则将使得changeTo无效。
      */
-    on(event: 'beforeSet', callback: (newValue: T, oldValue: T, oVar: this) => boolean | void): void;
+    on(event: 'beforeSet', callback: (newValue: T, oldValue: T, changeTo: (value: T) => void, oVar: this) => boolean | void): void;
     on(event: any, callback: any): any {
         switch (event) {
             case 'set':
@@ -121,14 +123,14 @@ export class ObservableVariable<T>{
     }
 
     once(event: 'set', callback: (newValue: T, oldValue: T) => void): void;
-    once(event: 'beforeSet', callback: (newValue: T, oldValue: T, oVar: this) => boolean | void): void;
+    once(event: 'beforeSet', callback: (newValue: T, oldValue: T, changeTo: (value: T) => void, oVar: this) => boolean | void): void;
     once(event: any, callback: any): any {
         const tempCallback = (...args: any[]) => { this.off(event, tempCallback); return callback(...args); };
         this.on(event, tempCallback);
     }
 
     off(event: 'set', callback?: (newValue: T, oldValue: T) => void): void;
-    off(event: 'beforeSet', callback?: (newValue: T, oldValue: T, oVar: this) => boolean | void): void;
+    off(event: 'beforeSet', callback?: (newValue: T, oldValue: T, changeTo: (value: T) => void, oVar: this) => boolean | void): void;
     off(event: any, callback: any): any {
         switch (event) {
             case 'set':

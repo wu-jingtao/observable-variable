@@ -207,7 +207,6 @@ describe('测试事件', function () {
     const testResult: any[] = [];
     function callback_void(...args: any[]) { testResult.push(...args); }
     function callback_void2(...args: any[]) { testResult.push(...args); }
-    function callback_false(...args: any[]) { testResult.push(...args); return false; }
 
     afterEach(function () {
         testResult.length = 0;
@@ -221,7 +220,11 @@ describe('测试事件', function () {
         obj.once('set', callback_void);
         obj.once('set', callback_void2);
 
-        obj.once('beforeSet', callback_false);
+        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => {
+            testResult.push(newValue, oldValue, oVar);
+            changeTo('1');
+            return false;
+        });
 
         obj.value = 'b';
 
@@ -235,11 +238,17 @@ describe('测试事件', function () {
 
         obj.value = 'd';
 
+        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => changeTo('f'));
+
+        obj.value = 'e';
+
         expect(testResult).to.eql([
             'b', 'a', obj,
             'b', 'a', 'b', 'a', 'b', 'a', 'b', 'a',
-            'c', 'b'
+            'c', 'b',
         ]);
+
+        expect(obj.value).to.be('f');
     });
 
     it('测试ObservableArray', function () {
@@ -249,7 +258,11 @@ describe('测试事件', function () {
         obj.on('set', callback_void2);
         obj.once('set', callback_void);
 
-        obj.once('beforeSet', callback_false);
+        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => {
+            testResult.push(newValue, oldValue, oVar);
+            changeTo([666]);
+            return false;
+        });
 
         obj.on('add', callback_void);
         obj.on('add', callback_void2);
@@ -286,6 +299,10 @@ describe('测试事件', function () {
 
         obj.value = [5];
 
+        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => changeTo([777]));
+
+        obj.value = [6];
+
         expect(testResult).to.eql([
             'a', 'a', 'a', 'a', 'a', 'a',
             'b', 'b',
@@ -293,6 +310,8 @@ describe('测试事件', function () {
             [3], [1], [3], [1], [3], [1],
             [4], [3]
         ]);
+
+        expect(obj.value).to.eql([777]);
     });
 
     it('测试ObservableMap', function () {
@@ -300,6 +319,9 @@ describe('测试事件', function () {
         const m2 = new Map([['2', 2]]);
         const m3 = new Map([['3', 3]]);
         const m4 = new Map([['4', 4]]);
+        const m5 = new Map([['5', 5]]);
+        const m6 = new Map([['6', 6]]);
+        const m7 = new Map([['7', 7]]);
 
         const obj = new ObservableMap(m1)
 
@@ -307,7 +329,11 @@ describe('测试事件', function () {
         obj.on('set', callback_void2);
         obj.once('set', callback_void);
 
-        obj.once('beforeSet', callback_false);
+        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => {
+            testResult.push(newValue, oldValue, oVar);
+            changeTo(m5);
+            return false;
+        });
 
         obj.on('update', callback_void);
         obj.on('update', callback_void2);
@@ -359,6 +385,10 @@ describe('测试事件', function () {
 
         obj.value = m4;
 
+        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => changeTo(m7));
+
+        obj.value = m6;
+
         expect(testResult).to.eql([
             1, 'a', 1, 'a', 1, 'a', 1, 'a', 1, 'a', 1, 'a',
             2, 'b', 2, 'b',
@@ -368,6 +398,8 @@ describe('测试事件', function () {
             m2, m1, m2, m1, m2, m1,
             m3, m2
         ]);
+
+        expect(obj.value).to.be(m7);
     });
 
     it('测试ObservableSet', function () {
@@ -375,6 +407,9 @@ describe('测试事件', function () {
         const s2 = new Set<string | number>([2]);
         const s3 = new Set<string | number>([3]);
         const s4 = new Set<string | number>([4]);
+        const s5 = new Set<string | number>([5]);
+        const s6 = new Set<string | number>([6]);
+        const s7 = new Set<string | number>([7]);
 
         const obj = new ObservableSet(s1)
 
@@ -382,7 +417,11 @@ describe('测试事件', function () {
         obj.on('set', callback_void2);
         obj.once('set', callback_void);
 
-        obj.once('beforeSet', callback_false);
+        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => {
+            testResult.push(newValue, oldValue, oVar);
+            changeTo(s5);
+            return false;
+        });
 
         obj.on('add', callback_void);
         obj.on('add', callback_void2);
@@ -419,6 +458,10 @@ describe('测试事件', function () {
 
         obj.value = s4;
 
+        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => changeTo(s7));
+
+        obj.value = s6;
+
         expect(testResult).to.eql([
             'a', 'a', 'a', 'a', 'a', 'a',
             'b', 'b',
@@ -426,6 +469,8 @@ describe('测试事件', function () {
             s2, s1, s2, s1, s2, s1,
             s3, s2
         ]);
+
+        expect(obj.value).to.be(s7);
     });
 });
 
