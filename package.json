@@ -1,6 +1,6 @@
 {
     "name": "observable-variable",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "description": "包装变量或对象，当其值发生改变的时候可以通过事件监听",
     "main": "./bin/index.js",
     "types": "./bin/index.d.ts",
@@ -33,7 +33,7 @@
         "gulp-typescript": "^5.0.0-alpha.3",
         "mocha": "^5.2.0",
         "ts-node": "^7.0.0",
-        "typescript": "^2.9.2",
+        "typescript": "^3.0.1",
         "lodash": "^4.17.10"
     },
     "dependencies": {}
