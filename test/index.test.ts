@@ -474,6 +474,39 @@ describe('测试事件', function () {
     });
 });
 
+it('测试 ObservableVariable 的 _changeStealthily', function () {
+    const result: number[] = [];
+    const obj = new ObservableVariable(1);
+
+    obj.on('set', (newValue, oldValue) => result.push(newValue, oldValue));
+
+    obj.once('beforeSet', (newValue, oldValue) => { result.push(newValue, oldValue); });
+    obj._changeStealthily(2);
+    expect(obj.value).to.be(2);
+
+    obj.once('beforeSet', (newValue, oldValue) => { result.push(newValue, oldValue); return false; });
+    obj._changeStealthily(3);
+    expect(obj.value).to.be(2);
+
+    obj.once('beforeSet', (newValue, oldValue, changeTo) => { result.push(newValue, oldValue); changeTo(123); });
+    obj._changeStealthily(4);
+    expect(obj.value).to.be(123);
+
+    obj.once('beforeSet', (newValue, oldValue, changeTo) => { result.push(newValue, oldValue); changeTo(456); return false; });
+    obj._changeStealthily(5);
+    expect(obj.value).to.be(123);
+
+    obj.readonly = true;
+    expect(obj._changeStealthily.bind(obj, 6)).to.throwError(/尝试修改一个只读的 ObservableVariable/);
+
+    expect(result).to.eql([
+        2, 1,
+        3, 2,
+        4, 2,
+        5, 123,
+    ]);
+});
+
 describe('测试ObservableArray 修改操作方法', function () {
 
     it('测试 pop', function () {

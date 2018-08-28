@@ -72,7 +72,7 @@ export class ObservableVariable<T>{
             throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
 
         if (this._onBeforeSet !== undefined)
-            if (this._onBeforeSet(v, this._value, (value: T) => { v = value; return; }, this) === false)
+            if (this._onBeforeSet(v, this._value, (value: T) => { v = value }, this) === false)
                 return;
 
         if (this._onSet.size > 0) {
@@ -81,6 +81,21 @@ export class ObservableVariable<T>{
             this._onSet.forEach(callback => callback(v, oldValue));
         } else
             this._value = v;
+    }
+
+    /**
+     * 改变某一个值而不触发'set'事件。
+     * 注意，readonly 和 onBeforeSet 还是会起作用
+     */
+    public _changeStealthily(v: T): void {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
+        if (this._onBeforeSet !== undefined)
+            if (this._onBeforeSet(v, this._value, (value: T) => { v = value }, this) === false)
+                return;
+
+        this._value = v;
     }
 
     //#endregion
