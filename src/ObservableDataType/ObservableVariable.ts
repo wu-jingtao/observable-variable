@@ -8,27 +8,28 @@ export class ObservableVariable<T>{
     /**
      * 将一个变量转换成可观察变量，相当于 new ObservableVariable(value)
      */
-    static observe<T>(value: ObservableVariable<T> | T): ObservableVariable<T>;
+    static observe<T>(value: ObservableVariable<T> | T, options?: { readonly?: boolean, ensureChange?: boolean }): ObservableVariable<T>;
     /**
      * 将对象中指定位置的一个变量转换成可观察变量，路径通过`.`分割
      */
-    static observe(object: object, path: string): void;
+    static observe(object: object, path: string, options?: { readonly?: boolean, ensureChange?: boolean }): void;
     /**
      * 将对象中指定位置的一个变量转换成可观察变量
      */
-    static observe(object: object, path: string[]): void;
-    static observe(value: any, path?: any): any {
-        if (path === undefined) {
+    static observe(object: object, path: string[], options?: { readonly?: boolean, ensureChange?: boolean }): void;
+    static observe(value: any, arg1?: any, arg2?: any): any {
+        if (undefined === arg1)
             return new ObservableVariable(value);
-        } else if ('string' === typeof path) {
-            path = path.split('.');
+        else if ('[object Object]' === Object.prototype.toString.call(arg1))
+            return new ObservableVariable(value, arg1);
+        else if ('string' === typeof arg1)
+            arg1 = arg1.split('.');
+
+        for (let index = 0, end = arg1.length - 1; index < end; index++) {
+            value = value[arg1[index]];
         }
 
-        for (let index = 0, end = path.length - 1; index < end; index++) {
-            value = value[path[index]];
-        }
-
-        value[path[path.length - 1]] = new ObservableVariable(value[path[path.length - 1]]);
+        value[arg1[arg1.length - 1]] = new ObservableVariable(value[arg1[arg1.length - 1]], arg2);
     }
 
     //#endregion
@@ -39,7 +40,7 @@ export class ObservableVariable<T>{
     protected _onSet: Set<(newValue: T, oldValue: T) => void> = new Set();
     protected _onBeforeSet: (newValue: T, oldValue: T, changeTo: (value: T) => void, oVar: ObservableVariable<T>) => boolean | void;
 
-    constructor(value: ObservableVariable<T> | T) {
+    constructor(value: ObservableVariable<T> | T, { readonly = false, ensureChange = true }: { readonly?: boolean, ensureChange?: boolean } = {}) {
         //确保不重复包裹变量
         if (value instanceof ObservableVariable) {
             /**
@@ -56,12 +57,19 @@ export class ObservableVariable<T>{
          * 如果相等则说明是重复包裹，后面的代码则不应当执行
          */
         this._value = value;
+        this.readonly = readonly;
+        this.ensureChange = ensureChange;
     }
 
     /**
      * 该变量是否是只读的，默认false
      */
-    public readonly = false;
+    public readonly: boolean;
+
+    /**
+     * 在触发'beforeSet'、'set'、'beforeUpdate'、'update'事件之前确保，新值不等于旧值。默认：true
+     */
+    public ensureChange: boolean;
 
     public get value(): T {
         return this._value;
@@ -71,9 +79,13 @@ export class ObservableVariable<T>{
         if (this.readonly)
             throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
 
+        if (this.ensureChange && v === this._value) return;
+
         if (this._onBeforeSet !== undefined)
-            if (this._onBeforeSet(v, this._value, (value: T) => { v = value }, this) === false)
+            if (this._onBeforeSet(v, this._value, value => { v = value }, this) === false)
                 return;
+
+        if (this.ensureChange && v === this._value) return; //确保在_onBeforeSet更改后依然是不相等的
 
         if (this._onSet.size > 0) {
             const oldValue = this._value;
@@ -83,22 +95,24 @@ export class ObservableVariable<T>{
             this._value = v;
     }
 
+    //#endregion
+
     /**
      * 改变某一个值而不触发'set'事件。
-     * 注意，readonly 和 onBeforeSet 还是会起作用
+     * 注意，ensureChange、readonly、onBeforeSet 还是会起作用
      */
     public _changeStealthily(v: T): void {
         if (this.readonly)
             throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
 
+        if (this.ensureChange && v === this._value) return;
+
         if (this._onBeforeSet !== undefined)
-            if (this._onBeforeSet(v, this._value, (value: T) => { v = value }, this) === false)
+            if (this._onBeforeSet(v, this._value, value => { v = value }, this) === false)
                 return;
 
         this._value = v;
     }
-
-    //#endregion
 
     //#region toJSON
 

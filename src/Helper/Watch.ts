@@ -5,7 +5,7 @@ import { ObservableVariable } from "../ObservableDataType/ObservableVariable";
  * 返回一个off方法用于取消监听变化
  */
 export function watch(items: ObservableVariable<any>[], callback: () => void) {
-    function listener() { callback(); }
+    function listener() { callback() }
 
     items.forEach((item: any) => {
         item.on('set', listener);

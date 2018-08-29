@@ -8,105 +8,173 @@ describe('测试创建可观察变量', function () {
     it('测试ObservableVariable', function () {
         const o1 = { test: 'test' };
         const o2 = { test2: 'test2' };
-        const o3 = { test3: 'test3', test4: 'test4' };
+        const o3 = { test3: 'test3' };
+        const o4 = { test4: 'test4', test5: 'test5' };
+        const o5 = { test6: 'test6', test7: 'test7' };
 
         const i1 = new ObservableVariable(o1);
         const i2 = new ObservableVariable(i1);
         expect(i1).to.be(i2);
         expect(i1.value).to.be(o1);
 
-        const i3 = ObservableVariable.observe(o2);
-        const i4 = ObservableVariable.observe(i3);
+        const i3 = new ObservableVariable(o2, { readonly: true, ensureChange: false });
+        const i4 = new ObservableVariable(i3, { readonly: false, ensureChange: true });
         expect(i3).to.be(i4);
         expect(i3.value).to.be(o2);
+        expect(i3.readonly).to.be(true);
+        expect(i3.ensureChange).to.be(false);
+        expect(i4.readonly).to.be(true);
+        expect(i4.ensureChange).to.be(false);
 
-        ObservableVariable.observe(o3, 'test3');
-        ObservableVariable.observe(o3, ['test4']);
+        const i5 = ObservableVariable.observe(o3);
+        const i6 = ObservableVariable.observe(i5);
+        expect(i5).to.be(i6);
+        expect(i5.value).to.be(o3);
 
-        expect(o3.test3).to.be.a(ObservableVariable);
-        expect(o3.test4).to.be.a(ObservableVariable);
+        ObservableVariable.observe(o4, 'test4');
+        ObservableVariable.observe(o4, ['test5']);
+
+        expect(o4.test4).to.be.a(ObservableVariable);
+        expect(o4.test5).to.be.a(ObservableVariable);
+
+        ObservableVariable.observe(o5, 'test6', { readonly: true, ensureChange: false });
+        ObservableVariable.observe(o5, ['test7'], { readonly: true, ensureChange: false });
+
+        expect(o5.test6).to.be.a(ObservableVariable);
+        expect(o5.test7).to.be.a(ObservableVariable);
+        expect((o5.test6 as any).readonly).to.be(true);
+        expect((o5.test6 as any).ensureChange).to.be(false);
+        expect((o5.test7 as any).readonly).to.be(true);
+        expect((o5.test7 as any).ensureChange).to.be(false);
     });
 
     it('测试ObservableArray', function () {
         const o1 = [{ test: 'test' }];
         const o2 = [{ test2: 'test2' }];
-        const o3 = { test3: ['test3'], test4: ['test4'] };
+        const o3 = [{ test3: 'test3' }];
+        const o4 = { test4: ['test4'], test5: ['test5'] };
+        const o5 = { test6: ['test6'], test7: ['test7'] };
 
         const i1 = new ObservableArray(o1);
         const i2 = new ObservableArray(i1);
         expect(i1).to.be(i2);
         expect(i1.value).to.be(o1);
 
-        const i3 = ObservableArray.observe(o2);
-        const i4 = ObservableArray.observe(i3);
+        const i3 = new ObservableArray(o2, { readonly: true, ensureChange: false });
+        const i4 = new ObservableArray(i3, { readonly: false, ensureChange: true });
         expect(i3).to.be(i4);
         expect(i3.value).to.be(o2);
+        expect(i3.readonly).to.be(true);
+        expect(i3.ensureChange).to.be(false);
+        expect(i4.readonly).to.be(true);
+        expect(i4.ensureChange).to.be(false);
 
-        ObservableArray.observe(o3, 'test3');
-        ObservableArray.observe(o3, ['test4']);
+        const i5 = ObservableArray.observe(o3);
+        const i6 = ObservableArray.observe(i5);
+        expect(i5).to.be(i6);
+        expect(i5.value).to.be(o3);
 
-        expect(o3.test3).to.be.a(ObservableVariable);
-        expect(o3.test4).to.be.a(ObservableVariable);
+        ObservableArray.observe(o4, 'test4');
+        ObservableArray.observe(o4, ['test5']);
+
+        expect(o4.test4).to.be.a(ObservableArray);
+        expect(o4.test5).to.be.a(ObservableArray);
+
+        ObservableArray.observe(o5, 'test6', { readonly: true, ensureChange: false });
+        ObservableArray.observe(o5, ['test7'], { readonly: true, ensureChange: false });
+
+        expect(o5.test6).to.be.a(ObservableArray);
+        expect(o5.test7).to.be.a(ObservableArray);
+        expect((o5.test6 as any).readonly).to.be(true);
+        expect((o5.test6 as any).ensureChange).to.be(false);
+        expect((o5.test7 as any).readonly).to.be(true);
+        expect((o5.test7 as any).ensureChange).to.be(false);
     });
 
     it('测试ObservableMap', function () {
         const o1 = [['test', 'test']] as [string, string][];
         const o2 = new Map<number, string>();
-        const o3 = [['test2', 'test2']] as [string, string][];
-        const o4 = new Map<string, number>();
-        const o5 = { test3: [[1, 2]], test4: new Map<string, number>() };
+        const o3 = [['test3', 'test3']] as [string, string][];
+        const o4 = { test4: new Map<string, number>(), test5: [['test5', 'test5']] };
+        const o5 = { test6: new Map<string, number>(), test7: [['test7', 'test7']] };
 
         const i1 = new ObservableMap(o1);
         const i2 = new ObservableMap(i1);
         expect(i1).to.be(i2);
         expect([...i1.value.entries()]).to.eql(o1);
 
-        const i3 = new ObservableMap(o2);
-        expect(i3.value).to.be(o2);
+        const i3 = new ObservableMap(o2, { readonly: true, ensureChange: false });
+        const i4 = new ObservableMap(i3, { readonly: false, ensureChange: true });
+        expect(i3).to.be(i4);
+        expect([...i3.value.entries()]).to.eql(o2);
+        expect(i3.readonly).to.be(true);
+        expect(i3.ensureChange).to.be(false);
+        expect(i4.readonly).to.be(true);
+        expect(i4.ensureChange).to.be(false);
 
-        const i4 = ObservableMap.observe(o3);
-        const i5 = ObservableMap.observe(i4);
-        expect(i4).to.be(i5);
-        expect([...i4.value.entries()]).to.eql(o3);
+        const i5 = ObservableMap.observe(o3);
+        const i6 = ObservableMap.observe(i5);
+        expect(i5).to.be(i6);
+        expect([...i5.value.entries()]).to.eql(o3);
 
-        const i6 = ObservableMap.observe(o4);
-        expect(i6.value).to.be(o4);
+        ObservableMap.observe(o4, 'test4');
+        ObservableMap.observe(o4, ['test5']);
 
-        ObservableMap.observe(o5, 'test3');
-        ObservableMap.observe(o5, ['test4']);
+        expect(o4.test4).to.be.a(ObservableMap);
+        expect(o4.test5).to.be.a(ObservableMap);
 
-        expect(o5.test3).to.be.a(ObservableMap);
-        expect(o5.test4).to.be.a(ObservableMap);
+        ObservableMap.observe(o5, 'test6', { readonly: true, ensureChange: false });
+        ObservableMap.observe(o5, ['test7'], { readonly: true, ensureChange: false });
+
+        expect(o5.test6).to.be.a(ObservableMap);
+        expect(o5.test7).to.be.a(ObservableMap);
+        expect((o5.test6 as any).readonly).to.be(true);
+        expect((o5.test6 as any).ensureChange).to.be(false);
+        expect((o5.test7 as any).readonly).to.be(true);
+        expect((o5.test7 as any).ensureChange).to.be(false);
     });
 
     it('测试ObservableSet', function () {
-        const o1 = [{ test: 'test' }];
-        const o2 = new Set<number>();
-        const o3 = [{ test2: 'test2' }];
-        const o4 = new Set<number>();
-        const o5 = { test3: ['test3'], test4: new Set<number>() };
+        const o1 = [['test', 'test']];
+        const o2 = new Set<string>();
+        const o3 = [['test3', 'test3']];
+        const o4 = { test4: new Set<number>(), test5: [['test5', 'test5']] };
+        const o5 = { test6: new Set<number>(), test7: [['test7', 'test7']] };
 
         const i1 = new ObservableSet(o1);
         const i2 = new ObservableSet(i1);
         expect(i1).to.be(i2);
         expect([...i1.value.values()]).to.eql(o1);
 
-        const i3 = new ObservableSet(o2);
-        expect(i3.value).to.be(o2);
+        const i3 = new ObservableSet(o2, { readonly: true, ensureChange: false });
+        const i4 = new ObservableSet(i3, { readonly: false, ensureChange: true });
+        expect(i3).to.be(i4);
+        expect([...i3.value.values()]).to.eql(o2);
+        expect(i3.readonly).to.be(true);
+        expect(i3.ensureChange).to.be(false);
+        expect(i4.readonly).to.be(true);
+        expect(i4.ensureChange).to.be(false);
 
-        const i4 = ObservableSet.observe(o3);
-        const i5 = ObservableSet.observe(i4);
-        expect(i4).to.be(i5);
-        expect([...i4.value.values()]).to.eql(o3);
+        const i5 = ObservableSet.observe(o3);
+        const i6 = ObservableSet.observe(i5);
+        expect(i5).to.be(i6);
+        expect([...i5.value.values()]).to.eql(o3);
 
-        const i6 = ObservableSet.observe(o4);
-        expect(i6.value).to.be(o4);
+        ObservableSet.observe(o4, 'test4');
+        ObservableSet.observe(o4, ['test5']);
 
-        ObservableSet.observe(o5, 'test3');
-        ObservableSet.observe(o5, ['test4']);
+        expect(o4.test4).to.be.a(ObservableSet);
+        expect(o4.test5).to.be.a(ObservableSet);
 
-        expect(o5.test3).to.be.a(ObservableSet);
-        expect(o5.test4).to.be.a(ObservableSet);
+        ObservableSet.observe(o5, 'test6', { readonly: true, ensureChange: false });
+        ObservableSet.observe(o5, ['test7'], { readonly: true, ensureChange: false });
+
+        expect(o5.test6).to.be.a(ObservableSet);
+        expect(o5.test7).to.be.a(ObservableSet);
+        expect((o5.test6 as any).readonly).to.be(true);
+        expect((o5.test6 as any).ensureChange).to.be(false);
+        expect((o5.test7 as any).readonly).to.be(true);
+        expect((o5.test7 as any).ensureChange).to.be(false);
     });
 });
 
@@ -189,6 +257,39 @@ describe('测试 readonly', function () {
     });
 });
 
+it('测试 _changeStealthily', function () {
+    const result: any[] = [];
+    const obj = new ObservableVariable(1);
+
+    obj.on('set', (newValue, oldValue) => result.push('set', newValue, oldValue));
+
+    obj.once('beforeSet', (newValue, oldValue) => { result.push('beforeSet', newValue, oldValue); });
+    obj._changeStealthily(2);
+    expect(obj.value).to.be(2);
+
+    obj.once('beforeSet', (newValue, oldValue) => { result.push('beforeSet', newValue, oldValue); return false; });
+    obj._changeStealthily(3);
+    expect(obj.value).to.be(2);
+
+    obj.once('beforeSet', (newValue, oldValue, changeTo) => { result.push('beforeSet', newValue, oldValue); changeTo(123); });
+    obj._changeStealthily(4);
+    expect(obj.value).to.be(123);
+
+    obj.once('beforeSet', (newValue, oldValue, changeTo) => { result.push('beforeSet', newValue, oldValue); changeTo(456); return false; });
+    obj._changeStealthily(5);
+    expect(obj.value).to.be(123);
+
+    obj.readonly = true;
+    expect(obj._changeStealthily.bind(obj, 6)).to.throwError(/尝试修改一个只读的 ObservableVariable/);
+
+    expect(result).to.eql([
+        'beforeSet', 2, 1,
+        'beforeSet', 3, 2,
+        'beforeSet', 4, 2,
+        'beforeSet', 5, 123,
+    ]);
+});
+
 it('测试 元素个数属性', function () {
     const oa = new ObservableArray(['oa']);
     const om = new ObservableMap([['om', 123], ['om', 456]]);
@@ -205,306 +306,356 @@ it('测试 元素个数属性', function () {
 
 describe('测试事件', function () {
     const testResult: any[] = [];
-    function callback_void(...args: any[]) { testResult.push(...args); }
-    function callback_void2(...args: any[]) { testResult.push(...args); }
 
     afterEach(function () {
         testResult.length = 0;
-    })
-
-    it('测试ObservableVariable', function () {
-        const obj = new ObservableVariable('a');
-
-        obj.on('set', callback_void);
-        obj.on('set', callback_void2);
-        obj.once('set', callback_void);
-        obj.once('set', callback_void2);
-
-        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => {
-            testResult.push(newValue, oldValue, oVar);
-            changeTo('1');
-            return false;
-        });
-
-        obj.value = 'b';
-
-        obj.value = 'b';
-
-        obj.off('set', callback_void);
-
-        obj.value = 'c';
-
-        obj.off('set');
-
-        obj.value = 'd';
-
-        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => changeTo('f'));
-
-        obj.value = 'e';
-
-        expect(testResult).to.eql([
-            'b', 'a', obj,
-            'b', 'a', 'b', 'a', 'b', 'a', 'b', 'a',
-            'c', 'b',
-        ]);
-
-        expect(obj.value).to.be('f');
     });
 
-    it('测试ObservableArray', function () {
-        const obj = new ObservableArray<number | string>([1]);
+    describe('测试ObservableVariable', function () {
 
-        obj.on('set', callback_void);
-        obj.on('set', callback_void2);
-        obj.once('set', callback_void);
+        it('测试 set', function () {
+            const obj = new ObservableVariable('a');
 
-        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => {
-            testResult.push(newValue, oldValue, oVar);
-            changeTo([666]);
-            return false;
+            function callback_on(newValue: string, oldValue: string) { testResult.push('on', newValue, oldValue) }
+            function callback_once(newValue: string, oldValue: string) { testResult.push('once', newValue, oldValue) }
+
+            obj.on('set', callback_on);
+            obj.once('set', callback_once);
+
+            obj.value = 'a';
+            obj.value = 'b';
+            obj.value = 'c';
+
+            obj.ensureChange = false;
+            obj.value = 'c';
+
+            obj.off('set', callback_on);
+            obj.off('set', callback_once);
+
+            obj.value = 'd';
+
+            expect(testResult).to.eql([
+                'on', 'b', 'a', 'once', 'b', 'a',
+                'on', 'c', 'b',
+                'on', 'c', 'c',
+            ]);
         });
 
-        obj.on('add', callback_void);
-        obj.on('add', callback_void2);
-        obj.once('add', callback_void);
+        it('测试 beforeSet', function () {
+            const obj = new ObservableVariable('a');
 
-        obj.on('remove', callback_void);
-        obj.on('remove', callback_void2);
-        obj.once('remove', callback_void);
+            obj.on('set', (newValue, oldValue) => { testResult.push('set', newValue, oldValue) });
+            obj.on('beforeSet', (newValue, oldValue) => { testResult.push('on', newValue, oldValue) });
+            obj.value = 'a';
+            obj.value = 'b';
 
-        obj.push('a');
-        obj.pop();
+            obj.off('beforeSet');
+            obj.value = 'c';
 
-        obj.off('add', callback_void);
-        obj.off('remove', callback_void);
+            obj.once('beforeSet', (newValue, oldValue) => { testResult.push('once1', newValue, oldValue) });
+            obj.value = 'd';
+            obj.value = 'e';
 
-        obj.push('b');
-        obj.pop();
+            obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => { testResult.push('once2', newValue, oldValue, oVar); return false; });
+            obj.value = 'e';
+            obj.value = 'f';
+            expect(obj.value).to.be('e');
 
-        obj.off('add');
-        obj.off('remove');
+            obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => { testResult.push('once3', newValue, oldValue, oVar); changeTo('h'); });
+            obj.value = 'g';
+            expect(obj.value).to.be('h');
 
-        obj.push('c');
-        obj.pop();
+            obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => { testResult.push('once4', newValue, oldValue, oVar); changeTo('h'); });
+            obj.value = 'i';
+            expect(obj.value).to.be('h');
 
-        obj.value = [2];
+            obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => { testResult.push('once5', newValue, oldValue, oVar); changeTo('k'); return false; });
+            obj.value = 'j';
+            expect(obj.value).to.be('h');
 
-        obj.value = [3];
+            obj.ensureChange = false;
 
-        obj.off('set', callback_void);
+            obj.once('beforeSet', (newValue, oldValue) => { testResult.push('once6', newValue, oldValue) });
+            obj.value = 'h';
 
-        obj.value = [4];
+            obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => { testResult.push('once7', newValue, oldValue, oVar); changeTo('h'); });
+            obj.value = 'l';
+            expect(obj.value).to.be('h');
 
-        obj.off('set');
-
-        obj.value = [5];
-
-        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => changeTo([777]));
-
-        obj.value = [6];
-
-        expect(testResult).to.eql([
-            'a', 'a', 'a', 'a', 'a', 'a',
-            'b', 'b',
-            [2], [1], obj,
-            [3], [1], [3], [1], [3], [1],
-            [4], [3]
-        ]);
-
-        expect(obj.value).to.eql([777]);
+            expect(testResult).to.eql([
+                'on', 'b', 'a', 'set', 'b', 'a',
+                'set', 'c', 'b',
+                'once1', 'd', 'c', 'set', 'd', 'c',
+                'set', 'e', 'd',
+                'once2', 'f', 'e', obj,
+                'once3', 'g', 'e', obj, 'set', 'h', 'e',
+                'once4', 'i', 'h', obj,
+                'once5', 'j', 'h', obj,
+                'once6', 'h', 'h', 'set', 'h', 'h',
+                'once7', 'l', 'h', obj, 'set', 'h', 'h',
+            ]);
+        });
     });
 
-    it('测试ObservableMap', function () {
-        const m1 = new Map([['1', 1]]);
-        const m2 = new Map([['2', 2]]);
-        const m3 = new Map([['3', 3]]);
-        const m4 = new Map([['4', 4]]);
-        const m5 = new Map([['5', 5]]);
-        const m6 = new Map([['6', 6]]);
-        const m7 = new Map([['7', 7]]);
+    describe('测试ObservableArray', function () {
 
-        const obj = new ObservableMap(m1)
+        function callback(...args: any[]) { testResult.push(...args) }
+        function callback2(...args: any[]) { testResult.push(...args) }
 
-        obj.on('set', callback_void);
-        obj.on('set', callback_void2);
-        obj.once('set', callback_void);
+        it('测试 add', function () {
+            const obj = new ObservableArray([1]);
 
-        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => {
-            testResult.push(newValue, oldValue, oVar);
-            changeTo(m5);
-            return false;
+            obj.on('add', callback);
+            obj.on('add', callback2);
+            obj.once('add', callback);
+
+            obj.push(1);
+            obj.push(2);
+
+            obj.off('add', callback2);
+
+            obj.push(3);
+
+            obj.off('add');
+
+            obj.push(4);
+
+            expect(testResult).to.eql([
+                1, 1, 1,
+                2, 2,
+                3,
+            ]);
         });
 
-        obj.on('update', callback_void);
-        obj.on('update', callback_void2);
-        obj.once('update', callback_void);
+        it('测试 remove', function () {
+            const obj = new ObservableArray([1, 2, 3, 4, 5, 6, 7]);
 
-        obj.on('add', callback_void);
-        obj.on('add', callback_void2);
-        obj.once('add', callback_void);
+            obj.on('remove', callback);
+            obj.on('remove', callback2);
+            obj.once('remove', callback);
 
-        obj.on('remove', callback_void);
-        obj.on('remove', callback_void2);
-        obj.once('remove', callback_void);
+            obj.pop();
+            obj.pop();
 
-        obj.set('a', 1);
-        obj.delete('a');
+            obj.off('remove', callback2);
 
-        obj.off('add', callback_void);
-        obj.off('remove', callback_void);
+            obj.pop();
 
-        obj.set('b', 2);
-        obj.delete('b');
+            obj.off('remove');
 
-        obj.off('add');
-        obj.off('remove');
+            obj.pop();
 
-        obj.set('c', 3);
-        obj.delete('c');
-
-        obj.set('d', 1);
-        obj.set('d', 2);
-
-        obj.off('update', callback_void);
-
-        obj.set('d', 3);
-
-        obj.off('update');
-
-        obj.set('d', 4);
-
-        obj.value = m2;
-
-        obj.value = m2;
-
-        obj.off('set', callback_void);
-
-        obj.value = m3;
-
-        obj.off('set');
-
-        obj.value = m4;
-
-        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => changeTo(m7));
-
-        obj.value = m6;
-
-        expect(testResult).to.eql([
-            1, 'a', 1, 'a', 1, 'a', 1, 'a', 1, 'a', 1, 'a',
-            2, 'b', 2, 'b',
-            2, 1, 'd', 2, 1, 'd', 2, 1, 'd',
-            3, 2, 'd',
-            m2, m1, obj,
-            m2, m1, m2, m1, m2, m1,
-            m3, m2
-        ]);
-
-        expect(obj.value).to.be(m7);
+            expect(testResult).to.eql([
+                7, 7, 7,
+                6, 6,
+                5,
+            ]);
+        });
     });
 
-    it('测试ObservableSet', function () {
-        const s1 = new Set<string | number>([1]);
-        const s2 = new Set<string | number>([2]);
-        const s3 = new Set<string | number>([3]);
-        const s4 = new Set<string | number>([4]);
-        const s5 = new Set<string | number>([5]);
-        const s6 = new Set<string | number>([6]);
-        const s7 = new Set<string | number>([7]);
+    describe('测试ObservableSet', function () {
 
-        const obj = new ObservableSet(s1)
+        function callback(...args: any[]) { testResult.push(...args) }
+        function callback2(...args: any[]) { testResult.push(...args) }
 
-        obj.on('set', callback_void);
-        obj.on('set', callback_void2);
-        obj.once('set', callback_void);
+        it('测试 add', function () {
+            const obj = new ObservableSet([1]);
 
-        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => {
-            testResult.push(newValue, oldValue, oVar);
-            changeTo(s5);
-            return false;
+            obj.on('add', callback);
+            obj.on('add', callback2);
+            obj.once('add', callback);
+
+            obj.add(1);
+            obj.add(2);
+            obj.add(3);
+
+            obj.off('add', callback2);
+
+            obj.add(4);
+
+            obj.off('add');
+
+            obj.add(5);
+
+            expect(testResult).to.eql([
+                2, 2, 2,
+                3, 3,
+                4,
+            ]);
         });
 
-        obj.on('add', callback_void);
-        obj.on('add', callback_void2);
-        obj.once('add', callback_void);
+        it('测试 remove', function () {
+            const obj = new ObservableSet([2, 3, 4, 5]);
 
-        obj.on('remove', callback_void);
-        obj.on('remove', callback_void2);
-        obj.once('remove', callback_void);
+            obj.on('remove', callback);
+            obj.on('remove', callback2);
+            obj.once('remove', callback);
 
-        obj.add('a');
-        obj.delete('a');
+            obj.delete(1);
+            obj.delete(2);
+            obj.delete(3);
 
-        obj.off('add', callback_void);
-        obj.off('remove', callback_void);
+            obj.off('remove', callback2);
 
-        obj.add('b');
-        obj.delete('b');
+            obj.delete(4);
 
-        obj.off('add');
-        obj.off('remove');
+            obj.off('remove');
 
-        obj.add('c');
-        obj.delete('c');
+            obj.delete(5);
 
-        obj.value = s2;
-
-        obj.value = s2;
-
-        obj.off('set', callback_void);
-
-        obj.value = s3;
-
-        obj.off('set');
-
-        obj.value = s4;
-
-        obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => changeTo(s7));
-
-        obj.value = s6;
-
-        expect(testResult).to.eql([
-            'a', 'a', 'a', 'a', 'a', 'a',
-            'b', 'b',
-            s2, s1, obj,
-            s2, s1, s2, s1, s2, s1,
-            s3, s2
-        ]);
-
-        expect(obj.value).to.be(s7);
+            expect(testResult).to.eql([
+                2, 2, 2,
+                3, 3,
+                4,
+            ]);
+        });
     });
-});
 
-it('测试 ObservableVariable 的 _changeStealthily', function () {
-    const result: number[] = [];
-    const obj = new ObservableVariable(1);
+    describe('测试ObservableMap', function () {
 
-    obj.on('set', (newValue, oldValue) => result.push(newValue, oldValue));
+        function callback(...args: any[]) { testResult.push(...args) }
+        function callback2(...args: any[]) { testResult.push(...args) }
 
-    obj.once('beforeSet', (newValue, oldValue) => { result.push(newValue, oldValue); });
-    obj._changeStealthily(2);
-    expect(obj.value).to.be(2);
+        it('测试 add', function () {
+            const obj = new ObservableMap([['1', 1]]);
 
-    obj.once('beforeSet', (newValue, oldValue) => { result.push(newValue, oldValue); return false; });
-    obj._changeStealthily(3);
-    expect(obj.value).to.be(2);
+            obj.on('add', callback);
+            obj.on('add', callback2);
+            obj.once('add', callback);
 
-    obj.once('beforeSet', (newValue, oldValue, changeTo) => { result.push(newValue, oldValue); changeTo(123); });
-    obj._changeStealthily(4);
-    expect(obj.value).to.be(123);
+            obj.set('1', 1);
+            obj.set('2', 2);
+            obj.set('3', 3);
 
-    obj.once('beforeSet', (newValue, oldValue, changeTo) => { result.push(newValue, oldValue); changeTo(456); return false; });
-    obj._changeStealthily(5);
-    expect(obj.value).to.be(123);
+            obj.off('add', callback2);
 
-    obj.readonly = true;
-    expect(obj._changeStealthily.bind(obj, 6)).to.throwError(/尝试修改一个只读的 ObservableVariable/);
+            obj.set('4', 4);
 
-    expect(result).to.eql([
-        2, 1,
-        3, 2,
-        4, 2,
-        5, 123,
-    ]);
+            obj.off('add');
+
+            obj.set('5', 5);
+
+            expect(testResult).to.eql([
+                2, '2', 2, '2', 2, '2',
+                3, '3', 3, '3',
+                4, '4',
+            ]);
+        });
+
+        it('测试 remove', function () {
+            const obj = new ObservableMap([['2', 2], ['3', 3], ['4', 4], ['5', 5]]);
+
+            obj.on('remove', callback);
+            obj.on('remove', callback2);
+            obj.once('remove', callback);
+
+            obj.delete('1');
+            obj.delete('2');
+            obj.delete('3');
+
+            obj.off('remove', callback2);
+
+            obj.delete('4');
+
+            obj.off('remove');
+
+            obj.delete('5');
+
+            expect(testResult).to.eql([
+                2, '2', 2, '2', 2, '2',
+                3, '3', 3, '3',
+                4, '4',
+            ]);
+        });
+
+        it('测试 update', function () {
+            const obj = new ObservableMap([['1', 1]]);
+
+            obj.on('update', callback);
+            obj.on('update', callback2);
+            obj.once('update', callback);
+
+            obj.set('1', 1);
+            obj.set('1', 2);
+
+            obj.set('2', 2);
+
+            obj.ensureChange = false;
+
+            obj.set('2', 2);
+
+            obj.off('update', callback2);
+
+            obj.set('3', 3);
+            obj.set('3', 4);
+
+            obj.off('update');
+
+            obj.set('4', 4);
+            obj.set('4', 5);
+
+            expect(testResult).to.eql([
+                2, 1, '1', 2, 1, '1', 2, 1, '1',
+                2, 2, '2', 2, 2, '2',
+                4, 3, '3',
+            ]);
+        });
+
+        it('测试 beforeUpdate', function () {
+            const obj = new ObservableMap([['1', 1]]);
+
+            obj.on('update', (newValue, oldValue, key) => { testResult.push('update', newValue, oldValue, key) });
+            obj.on('beforeUpdate', (key, newValue, oldValue, changeTo, oMap) => { testResult.push('on', newValue, oldValue, key, oMap) });
+            obj.set('1', 1);
+            obj.set('1', 2);
+
+            obj.off('beforeUpdate');
+            obj.set('1', 3);
+
+            obj.once('beforeUpdate', (key, newValue, oldValue, changeTo, oMap) => { testResult.push('once1', newValue, oldValue) });
+            obj.set('1', 4);
+            obj.set('1', 5);
+
+            obj.once('beforeUpdate', (key, newValue, oldValue, changeTo, oMap) => { testResult.push('once2', newValue, oldValue); return false; });
+            obj.set('1', 5);
+            obj.set('1', 6);
+            expect(obj.value.get('1')).to.be(5);
+
+            obj.once('beforeUpdate', (key, newValue, oldValue, changeTo, oMap) => { testResult.push('once3', newValue, oldValue); changeTo(8); });
+            obj.set('1', 7);
+            expect(obj.value.get('1')).to.be(8);
+
+            obj.once('beforeUpdate', (key, newValue, oldValue, changeTo, oMap) => { testResult.push('once4', newValue, oldValue); changeTo(8); });
+            obj.set('1', 9);
+            expect(obj.value.get('1')).to.be(8);
+
+            obj.once('beforeUpdate', (key, newValue, oldValue, changeTo, oMap) => { testResult.push('once5', newValue, oldValue); changeTo(11); return false; });
+            obj.set('1', 10);
+            expect(obj.value.get('1')).to.be(8);
+
+            obj.ensureChange = false;
+
+            obj.once('beforeUpdate', (key, newValue, oldValue, changeTo, oMap) => { testResult.push('once6', newValue, oldValue) });
+            obj.set('1', 8);
+
+            obj.once('beforeUpdate', (key, newValue, oldValue, changeTo, oMap) => { testResult.push('once7', newValue, oldValue); changeTo(8); });
+            obj.set('1', 11);
+            expect(obj.value.get('1')).to.be(8);
+
+            expect(testResult).to.eql([
+                'on', 2, 1, '1', obj, 'update', 2, 1, '1',
+                'update', 3, 2, '1',
+                'once1', 4, 3, 'update', 4, 3, '1',
+                'update', 5, 4, '1',
+                'once2', 6, 5,
+                'once3', 7, 5, 'update', 8, 5, '1',
+                'once4', 9, 8,
+                'once5', 10, 8,
+                'once6', 8, 8, 'update', 8, 8, '1',
+                'once7', 11, 8, 'update', 8, 8, '1',
+            ]);
+        });
+    });
 });
 
 describe('测试ObservableArray 修改操作方法', function () {

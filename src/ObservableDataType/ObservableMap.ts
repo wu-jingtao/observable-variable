@@ -10,27 +10,28 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
     /**
      * 将一个数组转换成可观察Map，相当于 new ObservableMap(value)
      */
-    static observe<K, V>(value: ObservableMap<K, V> | Map<K, V> | ReadonlyArray<[K, V]>): ObservableMap<K, V>;
+    static observe<K, V>(value: ObservableMap<K, V> | Map<K, V> | ReadonlyArray<[K, V]>, options?: { readonly?: boolean, ensureChange?: boolean }): ObservableMap<K, V>;
     /**
      * 将对象中指定位置的一个数组转换成可观察Map，路径通过`.`分割
      */
-    static observe(object: object, path: string): void;
+    static observe(object: object, path: string, options?: { readonly?: boolean, ensureChange?: boolean }): void;
     /**
      * 将对象中指定位置的一个数组转换成可观察Map
      */
-    static observe(object: object, path: string[]): void;
-    static observe(value: any, path?: any): any {
-        if (path === undefined) {
+    static observe(object: object, path: string[], options?: { readonly?: boolean, ensureChange?: boolean }): void;
+    static observe(value: any, arg1?: any, arg2?: any): any {
+        if (undefined === arg1)
             return new ObservableMap(value);
-        } else if ('string' === typeof path) {
-            path = path.split('.');
+        else if ('[object Object]' === Object.prototype.toString.call(arg1))
+            return new ObservableMap(value, arg1);
+        else if ('string' === typeof arg1)
+            arg1 = arg1.split('.');
+
+        for (let index = 0, end = arg1.length - 1; index < end; index++) {
+            value = value[arg1[index]];
         }
 
-        for (let index = 0, end = path.length - 1; index < end; index++) {
-            value = value[path[index]];
-        }
-
-        value[path[path.length - 1]] = new ObservableMap(value[path[path.length - 1]]);
+        value[arg1[arg1.length - 1]] = new ObservableMap(value[arg1[arg1.length - 1]], arg2);
     }
 
     //#endregion
@@ -40,9 +41,10 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
     protected _onAdd: Set<(value: V, key: K) => void> = new Set();
     protected _onRemove: Set<(value: V, key: K) => void> = new Set();
     protected _onUpdate: Set<(newValue: V, oldValue: V, key: K) => void> = new Set();
+    protected _onBeforeUpdate: (key: K, newValue: V, oldValue: V, changeTo: (value: V) => void, oMap: ObservableMap<K, V>) => boolean | void;
 
-    constructor(value: ObservableMap<K, V> | Map<K, V> | ReadonlyArray<[K, V]>) {
-        super(value as any);
+    constructor(value: ObservableMap<K, V> | Map<K, V> | ReadonlyArray<[K, V]>, options?: { readonly?: boolean, ensureChange?: boolean }) {
+        super(value as any, options);
 
         if (this !== value)
             if (Array.isArray(value))
@@ -77,11 +79,17 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
      * 注意：该回调只允许设置一个，重复设置将覆盖之前的回调，同时设置的回调是以同步方式执行的。
      * 注意：如果要执行changeTo，则就不应再返回false了，否则将使得changeTo无效。
      */
-    on(event: 'beforeSet', callback: (newValue: Map<K, V>, oldValue: Map<K, V>, changeTo: (value: Map<K, V>) => void, oVar: this) => boolean | void): void;
+    on(event: 'beforeSet', callback: (newValue: Map<K, V>, oldValue: Map<K, V>, changeTo: (value: Map<K, V>) => void, oMap: this) => boolean | void): void;
     /**
      * 当更新Map中某个元素的值时触发
      */
     on(event: 'update', callback: (newValue: V, oldValue: V, key: K) => void): void;
+    /**
+     * 在更新Map中某个元素的值之前触发，返回false表示阻止更改，如果要更改newValue可以调用changeTo。
+     * 注意：该回调只允许设置一个，重复设置将覆盖之前的回调，同时设置的回调是以同步方式执行的。
+     * 注意：如果要执行changeTo，则就不应再返回false了，否则将使得changeTo无效。
+     */
+    on(event: 'beforeUpdate', callback: (key: K, newValue: V, oldValue: V, changeTo: (value: V) => void, oMap: this) => boolean | void): void;
     /**
      * 当向Map中添加元素时触发
      */
@@ -94,6 +102,10 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
         switch (event) {
             case 'update':
                 this._onUpdate.add(callback);
+                break;
+
+            case 'beforeUpdate':
+                this._onBeforeUpdate = callback;
                 break;
 
             case 'add':
@@ -111,8 +123,9 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
     }
 
     once(event: 'set', callback: (newValue: Map<K, V>, oldValue: Map<K, V>) => void): void;
-    once(event: 'beforeSet', callback: (newValue: Map<K, V>, oldValue: Map<K, V>, changeTo: (value: Map<K, V>) => void, oVar: this) => boolean | void): void;
+    once(event: 'beforeSet', callback: (newValue: Map<K, V>, oldValue: Map<K, V>, changeTo: (value: Map<K, V>) => void, oMap: this) => boolean | void): void;
     once(event: 'update', callback: (newValue: V, oldValue: V, key: K) => void): void;
+    once(event: 'beforeUpdate', callback: (key: K, newValue: V, oldValue: V, changeTo: (value: V) => void, oMap: this) => boolean | void): void;
     once(event: 'add', callback: (value: V, key: K) => void): void;
     once(event: 'remove', callback: (value: V, key: K) => void): void;
     once(event: any, callback: any): any {
@@ -120,14 +133,19 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
     }
 
     off(event: 'set', callback?: (newValue: Map<K, V>, oldValue: Map<K, V>) => void): void;
-    off(event: 'beforeSet', callback?: (newValue: Map<K, V>, oldValue: Map<K, V>, changeTo: (value: Map<K, V>) => void, oVar: this) => boolean | void): void;
+    off(event: 'beforeSet', callback?: (newValue: Map<K, V>, oldValue: Map<K, V>, changeTo: (value: Map<K, V>) => void, oMap: this) => boolean | void): void;
     off(event: 'update', callback?: (newValue: V, oldValue: V, key: K) => void): void;
+    off(event: 'beforeUpdate', callback?: (key: K, newValue: V, oldValue: V, changeTo: (value: V) => void, oMap: this) => boolean | void): void;
     off(event: 'add', callback?: (value: V, key: K) => void): void;
     off(event: 'remove', callback?: (value: V, key: K) => void): void;
     off(event: any, callback: any): any {
         switch (event) {
             case 'update':
                 callback ? this._onUpdate.delete(callback) : this._onUpdate.clear();
+                break;
+
+            case 'beforeUpdate':
+                this._onBeforeUpdate = undefined as any;
                 break;
 
             case 'add':
@@ -192,6 +210,14 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
 
         if (this._value.has(key)) {
             const oldValue = this._value.get(key) as V;
+
+            if (this.ensureChange && value === oldValue) return this;
+
+            if (this._onBeforeUpdate !== undefined)
+                if (this._onBeforeUpdate(key, value, oldValue, v => { value = v }, this) === false)
+                    return this;
+
+            if (this.ensureChange && value === oldValue) return this;
 
             this._value.set(key, value);
             this._onUpdate.forEach(callback => callback(value, oldValue, key));

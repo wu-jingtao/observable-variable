@@ -10,27 +10,28 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     /**
      * 将一个数组转换成可观察数组，相当于 new ObservableArray(value)
      */
-    static observe<T>(value: ObservableArray<T> | T[]): ObservableArray<T>;
+    static observe<T>(value: ObservableArray<T> | T[], options?: { readonly?: boolean, ensureChange?: boolean }): ObservableArray<T>;
     /**
      * 将对象中指定位置的一个数组转换成可观察数组，路径通过`.`分割
      */
-    static observe(object: object, path: string): void;
+    static observe(object: object, path: string, options?: { readonly?: boolean, ensureChange?: boolean }): void;
     /**
      * 将对象中指定位置的一个数组转换成可观察数组
      */
-    static observe(object: object, path: string[]): void;
-    static observe(value: any, path?: any): any {
-        if (path === undefined) {
+    static observe(object: object, path: string[], options?: { readonly?: boolean, ensureChange?: boolean }): void;
+    static observe(value: any, arg1?: any, arg2?: any): any {
+        if (undefined === arg1)
             return new ObservableArray(value);
-        } else if ('string' === typeof path) {
-            path = path.split('.');
+        else if ('[object Object]' === Object.prototype.toString.call(arg1))
+            return new ObservableArray(value, arg1);
+        else if ('string' === typeof arg1)
+            arg1 = arg1.split('.');
+
+        for (let index = 0, end = arg1.length - 1; index < end; index++) {
+            value = value[arg1[index]];
         }
 
-        for (let index = 0, end = path.length - 1; index < end; index++) {
-            value = value[path[index]];
-        }
-
-        value[path[path.length - 1]] = new ObservableArray(value[path[path.length - 1]]);
+        value[arg1[arg1.length - 1]] = new ObservableArray(value[arg1[arg1.length - 1]], arg2);
     }
 
     //#endregion
@@ -40,8 +41,8 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     protected _onAdd: Set<(value: T) => void> = new Set();
     protected _onRemove: Set<(value: T) => void> = new Set();
 
-    constructor(value: ObservableArray<T> | T[]) {
-        super(value);
+    constructor(value: ObservableArray<T> | T[], options?: { readonly?: boolean, ensureChange?: boolean }) {
+        super(value, options);
     }
 
     /**
@@ -68,7 +69,7 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      * 注意：该回调只允许设置一个，重复设置将覆盖之前的回调，同时设置的回调是以同步方式执行的。
      * 注意：如果要执行changeTo，则就不应再返回false了，否则将使得changeTo无效。
      */
-    on(event: 'beforeSet', callback: (newValue: T[], oldValue: T[], changeTo: (value: T[]) => void, oVar: this) => boolean | void): void;
+    on(event: 'beforeSet', callback: (newValue: T[], oldValue: T[], changeTo: (value: T[]) => void, oArr: this) => boolean | void): void;
     /**
      * 当向数组中添加元素时触发
      */
@@ -94,7 +95,7 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     }
 
     once(event: 'set', callback: (newValue: T[], oldValue: T[]) => void): void;
-    once(event: 'beforeSet', callback: (newValue: T[], oldValue: T[], changeTo: (value: T[]) => void, oVar: this) => boolean | void): void;
+    once(event: 'beforeSet', callback: (newValue: T[], oldValue: T[], changeTo: (value: T[]) => void, oArr: this) => boolean | void): void;
     once(event: 'add', callback: (value: T) => void): void;
     once(event: 'remove', callback: (value: T) => void): void;
     once(event: any, callback: any): any {
@@ -102,7 +103,7 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     }
 
     off(event: 'set', callback?: (newValue: T[], oldValue: T[]) => void): void;
-    off(event: 'beforeSet', callback?: (newValue: T[], oldValue: T[], changeTo: (value: T[]) => void, oVar: this) => boolean | void): void;
+    off(event: 'beforeSet', callback?: (newValue: T[], oldValue: T[], changeTo: (value: T[]) => void, oArr: this) => boolean | void): void;
     off(event: 'add', callback?: (value: T) => void): void;
     off(event: 'remove', callback?: (value: T) => void): void;
     off(event: any, callback: any): any {
