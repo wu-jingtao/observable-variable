@@ -8,17 +8,22 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     //#region 静态方法
 
     /**
+     * 数组的最大长度
+     */
+    static readonly ARRAY_MAX_LENGTH = 2 ** 32 - 1;
+
+    /**
      * 将一个数组转换成可观察数组，相当于 new ObservableArray(value)
      */
-    static observe<T>(value: ObservableArray<T> | T[], options?: { readonly?: boolean, ensureChange?: boolean }): ObservableArray<T>;
+    static observe<T>(value: ObservableArray<T> | T[], options?: { readonly?: boolean, ensureChange?: boolean, provideOnSetOldValue?: boolean }): ObservableArray<T>;
     /**
      * 将对象中指定位置的一个数组转换成可观察数组，路径通过`.`分割
      */
-    static observe(object: object, path: string, options?: { readonly?: boolean, ensureChange?: boolean }): void;
+    static observe(object: object, path: string, options?: { readonly?: boolean, ensureChange?: boolean, provideOnSetOldValue?: boolean }): void;
     /**
      * 将对象中指定位置的一个数组转换成可观察数组
      */
-    static observe(object: object, path: string[], options?: { readonly?: boolean, ensureChange?: boolean }): void;
+    static observe(object: object, path: string[], options?: { readonly?: boolean, ensureChange?: boolean, provideOnSetOldValue?: boolean }): void;
     static observe(value: any, arg1?: any, arg2?: any): any {
         if (undefined === arg1)
             return new ObservableArray(value);
@@ -40,9 +45,20 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
 
     protected _onAdd: Set<(value: T) => void> = new Set();
     protected _onRemove: Set<(value: T) => void> = new Set();
+    protected _onUpdate: Set<(newValue: T, oldValue: T, index: number) => void> = new Set();
+    protected _onBeforeUpdate: (index: number, newValue: T, oldValue: T, changeTo: (value: T) => void, oArr: ObservableArray<T>) => boolean | void;
 
-    constructor(value: ObservableArray<T> | T[], options?: { readonly?: boolean, ensureChange?: boolean }) {
+    /**
+     * 某些数组操作执行后会触发onSet事件，出于性能考虑，onSet事件的oldValue与newValue相同，如果需要提供oldValue，则可以设置为true。
+     */
+    provideOnSetOldValue: boolean;
+
+    constructor(value: ObservableArray<T> | T[], options: { readonly?: boolean, ensureChange?: boolean, provideOnSetOldValue?: boolean } = {}) {
         super(value, options);
+
+        if (this !== value)
+            if (options.provideOnSetOldValue)
+                this.provideOnSetOldValue = true;
     }
 
     /**
@@ -53,7 +69,15 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     }
 
     set length(v: number) {
-        this._value.length = v;
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
+        if (v > this._value.length && v < ObservableArray.ARRAY_MAX_LENGTH)
+            this.push(...(new Array(v - this._value.length)));
+        else if (v < this._value.length && v >= 0) {
+            const number = this._value.length - v;
+            this.splice(this._value.length - number, number);
+        }
     }
 
     //#endregion
@@ -71,6 +95,16 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      */
     on(event: 'beforeSet', callback: (newValue: T[], oldValue: T[], changeTo: (value: T[]) => void, oArr: this) => boolean | void): void;
     /**
+     * 当更新Array中某个元素的值时触发
+     */
+    on(event: 'update', callback: (newValue: T, oldValue: T, index: number) => void): void;
+    /**
+     * 在更新Array中某个元素的值之前触发，返回false表示阻止更改，如果要更改newValue可以调用changeTo。
+     * 注意：该回调只允许设置一个，重复设置将覆盖之前的回调，同时设置的回调是以同步方式执行的。
+     * 注意：如果要执行changeTo，则就不应再返回false了，否则将使得changeTo无效。
+     */
+    on(event: 'beforeUpdate', callback: (index: number, newValue: T, oldValue: T, changeTo: (value: T) => void, oArr: this) => boolean | void): void;
+    /**
      * 当向数组中添加元素时触发
      */
     on(event: 'add', callback: (value: T) => void): void;
@@ -80,6 +114,14 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     on(event: 'remove', callback: (value: T) => void): void;
     on(event: any, callback: any): any {
         switch (event) {
+            case 'update':
+                this._onUpdate.add(callback);
+                break;
+
+            case 'beforeUpdate':
+                this._onBeforeUpdate = callback;
+                break;
+
             case 'add':
                 this._onAdd.add(callback);
                 break;
@@ -96,6 +138,8 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
 
     once(event: 'set', callback: (newValue: T[], oldValue: T[]) => void): void;
     once(event: 'beforeSet', callback: (newValue: T[], oldValue: T[], changeTo: (value: T[]) => void, oArr: this) => boolean | void): void;
+    once(event: 'update', callback: (newValue: T, oldValue: T, index: number) => void): void;
+    once(event: 'beforeUpdate', callback: (index: number, newValue: T, oldValue: T, changeTo: (value: T) => void, oArr: this) => boolean | void): void;
     once(event: 'add', callback: (value: T) => void): void;
     once(event: 'remove', callback: (value: T) => void): void;
     once(event: any, callback: any): any {
@@ -104,10 +148,20 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
 
     off(event: 'set', callback?: (newValue: T[], oldValue: T[]) => void): void;
     off(event: 'beforeSet', callback?: (newValue: T[], oldValue: T[], changeTo: (value: T[]) => void, oArr: this) => boolean | void): void;
+    off(event: 'update', callback?: (newValue: T, oldValue: T, index: number) => void): void;
+    off(event: 'beforeUpdate', callback?: (index: number, newValue: T, oldValue: T, changeTo: (value: T) => void, oArr: this) => boolean | void): void;
     off(event: 'add', callback?: (value: T) => void): void;
     off(event: 'remove', callback?: (value: T) => void): void;
     off(event: any, callback: any): any {
         switch (event) {
+            case 'update':
+                callback ? this._onUpdate.delete(callback) : this._onUpdate.clear();
+                break;
+
+            case 'beforeUpdate':
+                this._onBeforeUpdate = undefined as any;
+                break;
+
             case 'add':
                 callback ? this._onAdd.delete(callback) : this._onAdd.clear();
                 break;
@@ -125,6 +179,67 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     //#endregion
 
     //#region 数组修改操作方法
+
+    /**
+     * 改变数组指定位置上的值。注意：当index大于或等于数组长度时将触发onAdd事件，当小于数组长度时将触发onUpdate和onBeforeUpdate事件。
+     */
+    set(index: number, value: T): T {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
+        if (index >= this._value.length) {   //说明是添加新的元素
+            this._value[index] = value;
+            this._onAdd.forEach(callback => callback(value));
+            return value;
+        } else {
+            const oldValue = this._value[index];
+
+            if (this.ensureChange && value === oldValue) return value;
+
+            const inputValue = value;
+
+            if (this._onBeforeUpdate !== undefined) {
+                if (this._onBeforeUpdate(index, value, oldValue, v => { value = v }, this) === false)
+                    return inputValue;
+                else if (this.ensureChange && value === oldValue)
+                    return inputValue;
+            }
+
+            this._value[index] = value;
+            this._onUpdate.forEach(callback => callback(value, oldValue, index));
+
+            return inputValue;
+        }
+    }
+
+    /**
+     * 删除数组中第一个与之匹配的元素
+     * @param value 要被删除的值
+     */
+    delete(value: T): boolean {
+        if (this.readonly)
+            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
+
+        const index = this._value.indexOf(value);
+
+        if (index !== -1) {
+            this._value.splice(index, 1);
+
+            if (this._onRemove.size > 0)
+                this._onRemove.forEach(callback => callback(value));
+
+            return true;
+        } else
+            return false;
+    }
+
+    /**
+     * 删除数组中所有与之匹配的元素
+     * @param value 要被删除的值
+     */
+    deleteAll(value: T): void {
+        while (this.delete(value));
+    }
 
     /**
      * 从数组中删除最后一个元素，并返回该元素的值。此方法更改数组的长度。
@@ -225,11 +340,14 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
             if (this._onRemove.size > 0) {
                 deleteCount = deleteCount === undefined ? this._value.length - start : deleteCount < 0 ? 0 : Math.min(Math.trunc(deleteCount), this._value.length - start);
 
-                for (let index = 0; index < deleteCount; index++) {
-                    const element = this._value.splice(start, 1)[0];
+                for (let index = deleteCount - 1; index >= 0; index--) {
+                    const element = this._value.splice(start + index, 1)[0];
                     this._onRemove.forEach(callback => callback(element));
                     deleteElements.push(element);
                 }
+
+                //没有unshift是出于性能的考虑
+                deleteElements.reverse();
             } else
                 deleteElements = this._value.splice(start, deleteCount);
 
@@ -247,35 +365,6 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     }
 
     /**
-     * 删除数组中第一个与之匹配的元素
-     * @param value 要被删除的值
-     */
-    delete(value: T): boolean {
-        if (this.readonly)
-            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
-
-        const index = this._value.indexOf(value);
-
-        if (index !== -1) {
-            this._value.splice(index, 1);
-
-            if (this._onRemove.size > 0)
-                this._onRemove.forEach(callback => callback(value));
-
-            return true;
-        } else
-            return false;
-    }
-
-    /**
-     * 删除数组中所有与之匹配的元素
-     * @param value 要被删除的值
-     */
-    deleteAll(value: T): void {
-        while (this.delete(value));
-    }
-
-    /**
      * 排序数组。注意，排序完成之后将触发onSet事件
      * @param compareFn 排序方法
      */
@@ -283,10 +372,12 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
         if (this.readonly)
             throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
 
-        this._value.sort(compareFn);
-
-        if (this._onSet.size > 0)
-            this._onSet.forEach(callback => callback(this._value, this._value));
+        if (this._onSet.size > 0) {
+            const oldValue = this.provideOnSetOldValue ? this._value.slice() : this._value;
+            this._value.sort(compareFn);
+            this._onSet.forEach(callback => callback(this._value, oldValue));
+        } else
+            this._value.sort(compareFn);
 
         return this;
     }
@@ -298,10 +389,12 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
         if (this.readonly)
             throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
 
-        this._value.reverse();
-
-        if (this._onSet.size > 0)
-            this._onSet.forEach(callback => callback(this._value, this._value));
+        if (this._onSet.size > 0) {
+            const oldValue = this.provideOnSetOldValue ? this._value.slice() : this._value;
+            this._value.reverse();
+            this._onSet.forEach(callback => callback(this._value, oldValue));
+        } else
+            this._value.reverse();
 
         return this;
     }
@@ -316,10 +409,12 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
         if (this.readonly)
             throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
 
-        this._value.fill(value, start, end);
-
-        if (this._onSet.size > 0)
-            this._onSet.forEach(callback => callback(this._value, this._value));
+        if (this._onSet.size > 0) {
+            const oldValue = this.provideOnSetOldValue ? this._value.slice() : this._value;
+            this._value.fill(value, start, end);
+            this._onSet.forEach(callback => callback(this._value, oldValue));
+        } else
+            this._value.fill(value, start, end);
 
         return this;
     }
@@ -331,10 +426,12 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
         if (this.readonly)
             throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
 
-        this._value.copyWithin(target, start, end);
-
-        if (this._onSet.size > 0)
-            this._onSet.forEach(callback => callback(this._value, this._value));
+        if (this._onSet.size > 0) {
+            const oldValue = this.provideOnSetOldValue ? this._value.slice() : this._value;
+            this._value.copyWithin(target, start, end);
+            this._onSet.forEach(callback => callback(this._value, oldValue));
+        } else
+            this._value.copyWithin(target, start, end);
 
         return this;
     }

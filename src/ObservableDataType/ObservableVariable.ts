@@ -81,11 +81,12 @@ export class ObservableVariable<T>{
 
         if (this.ensureChange && v === this._value) return;
 
-        if (this._onBeforeSet !== undefined)
+        if (this._onBeforeSet !== undefined) {
             if (this._onBeforeSet(v, this._value, value => { v = value }, this) === false)
                 return;
-
-        if (this.ensureChange && v === this._value) return; //确保在_onBeforeSet更改后依然是不相等的
+            else if (this.ensureChange && v === this._value)
+                return; //确保在_onBeforeSet更改后依然是不相等的
+        }
 
         if (this._onSet.size > 0) {
             const oldValue = this._value;
@@ -98,19 +99,10 @@ export class ObservableVariable<T>{
     //#endregion
 
     /**
-     * 改变某一个值而不触发'set'事件。
-     * 注意，ensureChange、readonly、onBeforeSet 还是会起作用
+     * 改变某一个值而不触发onSet和onBeforeSet事件。
+     * 注意，readonly 将不会起作用
      */
     public _changeStealthily(v: T): void {
-        if (this.readonly)
-            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
-
-        if (this.ensureChange && v === this._value) return;
-
-        if (this._onBeforeSet !== undefined)
-            if (this._onBeforeSet(v, this._value, value => { v = value }, this) === false)
-                return;
-
         this._value = v;
     }
 

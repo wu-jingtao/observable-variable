@@ -213,11 +213,12 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
 
             if (this.ensureChange && value === oldValue) return this;
 
-            if (this._onBeforeUpdate !== undefined)
+            if (this._onBeforeUpdate !== undefined) {
                 if (this._onBeforeUpdate(key, value, oldValue, v => { value = v }, this) === false)
                     return this;
-
-            if (this.ensureChange && value === oldValue) return this;
+                else if (this.ensureChange && value === oldValue)
+                    return this;
+            }
 
             this._value.set(key, value);
             this._onUpdate.forEach(callback => callback(value, oldValue, key));

@@ -1,6 +1,6 @@
 {
     "name": "observable-variable",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "包装变量或对象，当其值发生改变的时候可以通过事件监听",
     "main": "./bin/index.js",
     "types": "./bin/index.d.ts",
@@ -26,15 +26,15 @@
         "@types/expect.js": "^0.3.29",
         "@types/lodash": "^4.14.116",
         "@types/mocha": "^5.2.5",
-        "@types/node": "^10.7.1",
+        "@types/node": "^10.10.3",
         "expect.js": "^0.3.1",
         "gulp": "^3.9.1",
-        "gulp-sourcemaps": "^2.4.1",
+        "gulp-sourcemaps": "^2.6.4",
         "gulp-typescript": "^5.0.0-alpha.3",
         "mocha": "^5.2.0",
         "ts-node": "^7.0.1",
-        "typescript": "^3.0.1",
-        "lodash": "^4.17.10"
+        "typescript": "^3.0.3",
+        "lodash": "^4.17.11"
     },
     "dependencies": {}
 }
