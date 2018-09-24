@@ -441,6 +441,20 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     //#region 数组读取操作方法
 
     /**
+     * 读取数组某个位置上的值
+     */
+    get(index: number): T {
+        return this._value[index];
+    }
+
+    /**
+     * 判读数组某个位置上的值不等于undefined
+     */
+    has(index: number): boolean {
+        return this._value[index] !== undefined;
+    }
+
+    /**
      * 用于合并两个或多个数组。此方法不会更改现有数组，而是返回一个新数组。
      */
     concat(...items: ConcatArray<T>[]) {
