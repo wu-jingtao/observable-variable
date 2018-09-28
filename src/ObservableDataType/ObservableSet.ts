@@ -1,4 +1,4 @@
-import { ObservableVariable } from "./ObservableVariable";
+import { ObservableVariable, ObservableVariableOptions } from "./ObservableVariable";
 
 /**
  * 可观察改变集合
@@ -10,15 +10,15 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
     /**
      * 将一个数组转换成可观察集合，相当于 new ObservableSet(value)
      */
-    static observe<T>(value: ObservableSet<T> | Set<T> | ReadonlyArray<T>, options?: { readonly?: boolean, ensureChange?: boolean }): ObservableSet<T>;
+    static observe<T>(value: ObservableSet<T> | Set<T> | ReadonlyArray<T>, options?: ObservableVariableOptions): ObservableSet<T>;
     /**
      * 将对象中指定位置的一个数组转换成可观察集合，路径通过`.`分割
      */
-    static observe(object: object, path: string, options?: { readonly?: boolean, ensureChange?: boolean }): void;
+    static observe(object: object, path: string, options?: ObservableVariableOptions): void;
     /**
      * 将对象中指定位置的一个数组转换成可观察集合
      */
-    static observe(object: object, path: string[], options?: { readonly?: boolean, ensureChange?: boolean }): void;
+    static observe(object: object, path: string[], options?: ObservableVariableOptions): void;
     static observe(value: any, arg1?: any, arg2?: any): any {
         if (undefined === arg1)
             return new ObservableSet(value);
@@ -41,7 +41,7 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
     protected _onAdd: Set<(value: T) => void> = new Set();
     protected _onRemove: Set<(value: T) => void> = new Set();
 
-    constructor(value: ObservableSet<T> | Set<T> | ReadonlyArray<T>, options?: { readonly?: boolean, ensureChange?: boolean }) {
+    constructor(value: ObservableSet<T> | Set<T> | ReadonlyArray<T>, options?: ObservableVariableOptions) {
         super(value as any, options);
 
         if (this !== value)

@@ -1,4 +1,6 @@
-import { ObservableVariable } from "./ObservableVariable";
+import isDeepEqual = require('lodash.isequal');
+
+import { ObservableVariable, ObservableVariableOptions } from "./ObservableVariable";
 
 /**
  * 可观察改变Map
@@ -10,15 +12,15 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
     /**
      * 将一个数组转换成可观察Map，相当于 new ObservableMap(value)
      */
-    static observe<K, V>(value: ObservableMap<K, V> | Map<K, V> | ReadonlyArray<[K, V]>, options?: { readonly?: boolean, ensureChange?: boolean }): ObservableMap<K, V>;
+    static observe<K, V>(value: ObservableMap<K, V> | Map<K, V> | ReadonlyArray<[K, V]>, options?: ObservableVariableOptions): ObservableMap<K, V>;
     /**
      * 将对象中指定位置的一个数组转换成可观察Map，路径通过`.`分割
      */
-    static observe(object: object, path: string, options?: { readonly?: boolean, ensureChange?: boolean }): void;
+    static observe(object: object, path: string, options?: ObservableVariableOptions): void;
     /**
      * 将对象中指定位置的一个数组转换成可观察Map
      */
-    static observe(object: object, path: string[], options?: { readonly?: boolean, ensureChange?: boolean }): void;
+    static observe(object: object, path: string[], options?: ObservableVariableOptions): void;
     static observe(value: any, arg1?: any, arg2?: any): any {
         if (undefined === arg1)
             return new ObservableMap(value);
@@ -43,7 +45,7 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
     protected _onUpdate: Set<(newValue: V, oldValue: V, key: K) => void> = new Set();
     protected _onBeforeUpdate: (key: K, newValue: V, oldValue: V, changeTo: (value: V) => void, oMap: ObservableMap<K, V>) => boolean | void;
 
-    constructor(value: ObservableMap<K, V> | Map<K, V> | ReadonlyArray<[K, V]>, options?: { readonly?: boolean, ensureChange?: boolean }) {
+    constructor(value: ObservableMap<K, V> | Map<K, V> | ReadonlyArray<[K, V]>, options?: ObservableVariableOptions) {
         super(value as any, options);
 
         if (this !== value)
@@ -211,12 +213,12 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
         if (this._value.has(key)) {
             const oldValue = this._value.get(key) as V;
 
-            if (this.ensureChange && value === oldValue) return this;
+            if (this.ensureChange && (this.deepCompare ? isDeepEqual(value, oldValue) : value === oldValue)) return this;
 
             if (this._onBeforeUpdate !== undefined) {
                 if (this._onBeforeUpdate(key, value, oldValue, v => { value = v }, this) === false)
                     return this;
-                else if (this.ensureChange && value === oldValue)
+                else if (this.ensureChange && (this.deepCompare ? isDeepEqual(value, oldValue) : value === oldValue))
                     return this;
             }
 

@@ -1,6 +1,6 @@
 {
     "name": "observable-variable",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "description": "包装变量或对象，当其值发生改变的时候可以通过事件监听",
     "main": "./bin/index.js",
     "types": "./bin/index.d.ts",
@@ -25,6 +25,7 @@
     "devDependencies": {
         "@types/expect.js": "^0.3.29",
         "@types/lodash": "^4.14.116",
+        "@types/lodash.isequal": "^4.5.3",
         "@types/mocha": "^5.2.5",
         "@types/node": "^10.10.3",
         "expect.js": "^0.3.1",
@@ -36,5 +37,7 @@
         "typescript": "^3.0.3",
         "lodash": "^4.17.11"
     },
-    "dependencies": {}
+    "dependencies": {
+        "lodash.isequal": "^4.5.0"
+    }
 }

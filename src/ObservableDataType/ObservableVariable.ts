@@ -1,3 +1,22 @@
+import isDeepEqual = require('lodash.isequal');
+
+export interface ObservableVariableOptions {
+    /**
+     * 该变量是否是只读的，默认false
+     */
+    readonly?: boolean;
+
+    /**
+     * 在触发'beforeSet'、'set'、'beforeUpdate'、'update'事件之前确保新值不等于旧值。默认：true
+     */
+    ensureChange?: boolean;
+
+    /**
+     * 在对比值是否发生时，是否进行深度对比，默认false
+     */
+    deepCompare?: boolean;
+}
+
 /**
  * 可观察改变变量
  */
@@ -8,15 +27,15 @@ export class ObservableVariable<T>{
     /**
      * 将一个变量转换成可观察变量，相当于 new ObservableVariable(value)
      */
-    static observe<T>(value: ObservableVariable<T> | T, options?: { readonly?: boolean, ensureChange?: boolean }): ObservableVariable<T>;
+    static observe<T>(value: ObservableVariable<T> | T, options?: ObservableVariableOptions): ObservableVariable<T>;
     /**
      * 将对象中指定位置的一个变量转换成可观察变量，路径通过`.`分割
      */
-    static observe(object: object, path: string, options?: { readonly?: boolean, ensureChange?: boolean }): void;
+    static observe(object: object, path: string, options?: ObservableVariableOptions): void;
     /**
      * 将对象中指定位置的一个变量转换成可观察变量
      */
-    static observe(object: object, path: string[], options?: { readonly?: boolean, ensureChange?: boolean }): void;
+    static observe(object: object, path: string[], options?: ObservableVariableOptions): void;
     static observe(value: any, arg1?: any, arg2?: any): any {
         if (undefined === arg1)
             return new ObservableVariable(value);
@@ -40,7 +59,7 @@ export class ObservableVariable<T>{
     protected _onSet: Set<(newValue: T, oldValue: T) => void> = new Set();
     protected _onBeforeSet: (newValue: T, oldValue: T, changeTo: (value: T) => void, oVar: ObservableVariable<T>) => boolean | void;
 
-    constructor(value: ObservableVariable<T> | T, { readonly = false, ensureChange = true }: { readonly?: boolean, ensureChange?: boolean } = {}) {
+    constructor(value: ObservableVariable<T> | T, { readonly = false, ensureChange = true, deepCompare = false }: ObservableVariableOptions = {}) {
         //确保不重复包裹变量
         if (value instanceof ObservableVariable) {
             /**
@@ -59,6 +78,7 @@ export class ObservableVariable<T>{
         this._value = value;
         this.readonly = readonly;
         this.ensureChange = ensureChange;
+        this.deepCompare = deepCompare;
     }
 
     /**
@@ -67,9 +87,14 @@ export class ObservableVariable<T>{
     public readonly: boolean;
 
     /**
-     * 在触发'beforeSet'、'set'、'beforeUpdate'、'update'事件之前确保，新值不等于旧值。默认：true
+     * 在触发'beforeSet'、'set'、'beforeUpdate'、'update'事件之前确保新值不等于旧值。默认：true
      */
     public ensureChange: boolean;
+
+    /**
+     * 在对比值是否发生时，是否进行深度对比，默认false
+     */
+    public deepCompare: boolean;
 
     public get value(): T {
         return this._value;
@@ -79,12 +104,12 @@ export class ObservableVariable<T>{
         if (this.readonly)
             throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
 
-        if (this.ensureChange && v === this._value) return;
+        if (this.ensureChange && (this.deepCompare ? isDeepEqual(v, this._value) : v === this._value)) return;
 
         if (this._onBeforeSet !== undefined) {
             if (this._onBeforeSet(v, this._value, value => { v = value }, this) === false)
                 return;
-            else if (this.ensureChange && v === this._value)
+            else if (this.ensureChange && (this.deepCompare ? isDeepEqual(v, this._value) : v === this._value))
                 return; //确保在_onBeforeSet更改后依然是不相等的
         }
 

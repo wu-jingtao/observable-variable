@@ -1,4 +1,13 @@
-import { ObservableVariable } from "./ObservableVariable";
+import isDeepEqual = require('lodash.isequal');
+
+import { ObservableVariable, ObservableVariableOptions } from "./ObservableVariable";
+
+export interface ObservableArrayOptions extends ObservableVariableOptions {
+    /**
+     * 某些数组操作执行后会触发onSet事件，出于性能考虑，onSet事件的oldValue与newValue相同，如果需要提供oldValue，则可以设置为true。
+     */
+    provideOnSetOldValue?: boolean;
+}
 
 /**
  * 可观察改变数组
@@ -15,15 +24,15 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     /**
      * 将一个数组转换成可观察数组，相当于 new ObservableArray(value)
      */
-    static observe<T>(value: ObservableArray<T> | T[], options?: { readonly?: boolean, ensureChange?: boolean, provideOnSetOldValue?: boolean }): ObservableArray<T>;
+    static observe<T>(value: ObservableArray<T> | T[], options?: ObservableArrayOptions): ObservableArray<T>;
     /**
      * 将对象中指定位置的一个数组转换成可观察数组，路径通过`.`分割
      */
-    static observe(object: object, path: string, options?: { readonly?: boolean, ensureChange?: boolean, provideOnSetOldValue?: boolean }): void;
+    static observe(object: object, path: string, options?: ObservableArrayOptions): void;
     /**
      * 将对象中指定位置的一个数组转换成可观察数组
      */
-    static observe(object: object, path: string[], options?: { readonly?: boolean, ensureChange?: boolean, provideOnSetOldValue?: boolean }): void;
+    static observe(object: object, path: string[], options?: ObservableArrayOptions): void;
     static observe(value: any, arg1?: any, arg2?: any): any {
         if (undefined === arg1)
             return new ObservableArray(value);
@@ -53,7 +62,7 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      */
     provideOnSetOldValue: boolean;
 
-    constructor(value: ObservableArray<T> | T[], options: { readonly?: boolean, ensureChange?: boolean, provideOnSetOldValue?: boolean } = {}) {
+    constructor(value: ObservableArray<T> | T[], options: ObservableArrayOptions = {}) {
         super(value, options);
 
         if (this !== value)
@@ -194,14 +203,14 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
         } else {
             const oldValue = this._value[index];
 
-            if (this.ensureChange && value === oldValue) return value;
+            if (this.ensureChange && (this.deepCompare ? isDeepEqual(value, oldValue) : value === oldValue)) return value;
 
             const inputValue = value;
 
             if (this._onBeforeUpdate !== undefined) {
                 if (this._onBeforeUpdate(index, value, oldValue, v => { value = v }, this) === false)
                     return inputValue;
-                else if (this.ensureChange && value === oldValue)
+                else if (this.ensureChange && (this.deepCompare ? isDeepEqual(value, oldValue) : value === oldValue))
                     return inputValue;
             }
 

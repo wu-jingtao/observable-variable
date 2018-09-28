@@ -17,14 +17,16 @@ describe('测试创建可观察变量', function () {
         expect(i1).to.be(i2);
         expect(i1.value).to.be(o1);
 
-        const i3 = new ObservableVariable(o2, { readonly: true, ensureChange: false });
-        const i4 = new ObservableVariable(i3, { readonly: false, ensureChange: true });
+        const i3 = new ObservableVariable(o2, { readonly: true, ensureChange: false, deepCompare: true });
+        const i4 = new ObservableVariable(i3, { readonly: false, ensureChange: true, deepCompare: false });
         expect(i3).to.be(i4);
         expect(i3.value).to.be(o2);
         expect(i3.readonly).to.be(true);
         expect(i3.ensureChange).to.be(false);
+        expect(i3.deepCompare).to.be(true);
         expect(i4.readonly).to.be(true);
         expect(i4.ensureChange).to.be(false);
+        expect(i4.deepCompare).to.be(true);
 
         const i5 = ObservableVariable.observe(o3);
         const i6 = ObservableVariable.observe(i5);
@@ -37,15 +39,17 @@ describe('测试创建可观察变量', function () {
         expect(o4.test4).to.be.a(ObservableVariable);
         expect(o4.test5).to.be.a(ObservableVariable);
 
-        ObservableVariable.observe(o5, 'test6', { readonly: true, ensureChange: false });
-        ObservableVariable.observe(o5, ['test7'], { readonly: true, ensureChange: false });
+        ObservableVariable.observe(o5, 'test6', { readonly: true, ensureChange: false, deepCompare: true });
+        ObservableVariable.observe(o5, ['test7'], { readonly: true, ensureChange: false, deepCompare: true });
 
         expect(o5.test6).to.be.a(ObservableVariable);
         expect(o5.test7).to.be.a(ObservableVariable);
         expect((o5.test6 as any).readonly).to.be(true);
         expect((o5.test6 as any).ensureChange).to.be(false);
+        expect((o5.test6 as any).deepCompare).to.be(true);
         expect((o5.test7 as any).readonly).to.be(true);
         expect((o5.test7 as any).ensureChange).to.be(false);
+        expect((o5.test7 as any).deepCompare).to.be(true);
     });
 
     it('测试ObservableArray', function () {
@@ -60,15 +64,17 @@ describe('测试创建可观察变量', function () {
         expect(i1).to.be(i2);
         expect(i1.value).to.be(o1);
 
-        const i3 = new ObservableArray(o2, { readonly: true, ensureChange: false, provideOnSetOldValue: true });
-        const i4 = new ObservableArray(i3, { readonly: false, ensureChange: true, provideOnSetOldValue: false });
+        const i3 = new ObservableArray(o2, { readonly: true, ensureChange: false, deepCompare: true, provideOnSetOldValue: true });
+        const i4 = new ObservableArray(i3, { readonly: false, ensureChange: true, deepCompare: false, provideOnSetOldValue: false });
         expect(i3).to.be(i4);
         expect(i3.value).to.be(o2);
         expect(i3.readonly).to.be(true);
         expect(i3.ensureChange).to.be(false);
+        expect(i3.deepCompare).to.be(true);
         expect(i3.provideOnSetOldValue).to.be(true);
         expect(i4.readonly).to.be(true);
         expect(i4.ensureChange).to.be(false);
+        expect(i4.deepCompare).to.be(true);
         expect(i4.provideOnSetOldValue).to.be(true);
 
         const i5 = ObservableArray.observe(o3);
@@ -82,16 +88,18 @@ describe('测试创建可观察变量', function () {
         expect(o4.test4).to.be.a(ObservableArray);
         expect(o4.test5).to.be.a(ObservableArray);
 
-        ObservableArray.observe(o5, 'test6', { readonly: true, ensureChange: false, provideOnSetOldValue: true });
-        ObservableArray.observe(o5, ['test7'], { readonly: true, ensureChange: false, provideOnSetOldValue: true });
+        ObservableArray.observe(o5, 'test6', { readonly: true, ensureChange: false, deepCompare: true, provideOnSetOldValue: true });
+        ObservableArray.observe(o5, ['test7'], { readonly: true, ensureChange: false, deepCompare: true, provideOnSetOldValue: true });
 
         expect(o5.test6).to.be.a(ObservableArray);
         expect(o5.test7).to.be.a(ObservableArray);
         expect((o5.test6 as any).readonly).to.be(true);
         expect((o5.test6 as any).ensureChange).to.be(false);
+        expect((o5.test6 as any).deepCompare).to.be(true);
         expect((o5.test6 as any).provideOnSetOldValue).to.be(true);
         expect((o5.test7 as any).readonly).to.be(true);
         expect((o5.test7 as any).ensureChange).to.be(false);
+        expect((o5.test7 as any).deepCompare).to.be(true);
         expect((o5.test7 as any).provideOnSetOldValue).to.be(true);
     });
 
@@ -107,14 +115,16 @@ describe('测试创建可观察变量', function () {
         expect(i1).to.be(i2);
         expect([...i1.value.entries()]).to.eql(o1);
 
-        const i3 = new ObservableMap(o2, { readonly: true, ensureChange: false });
-        const i4 = new ObservableMap(i3, { readonly: false, ensureChange: true });
+        const i3 = new ObservableMap(o2, { readonly: true, ensureChange: false, deepCompare: true });
+        const i4 = new ObservableMap(i3, { readonly: false, ensureChange: true, deepCompare: false });
         expect(i3).to.be(i4);
         expect([...i3.value.entries()]).to.eql(o2);
         expect(i3.readonly).to.be(true);
         expect(i3.ensureChange).to.be(false);
+        expect(i3.deepCompare).to.be(true);
         expect(i4.readonly).to.be(true);
         expect(i4.ensureChange).to.be(false);
+        expect(i4.deepCompare).to.be(true);
 
         const i5 = ObservableMap.observe(o3);
         const i6 = ObservableMap.observe(i5);
@@ -127,15 +137,17 @@ describe('测试创建可观察变量', function () {
         expect(o4.test4).to.be.a(ObservableMap);
         expect(o4.test5).to.be.a(ObservableMap);
 
-        ObservableMap.observe(o5, 'test6', { readonly: true, ensureChange: false });
-        ObservableMap.observe(o5, ['test7'], { readonly: true, ensureChange: false });
+        ObservableMap.observe(o5, 'test6', { readonly: true, ensureChange: false, deepCompare: true });
+        ObservableMap.observe(o5, ['test7'], { readonly: true, ensureChange: false, deepCompare: true });
 
         expect(o5.test6).to.be.a(ObservableMap);
         expect(o5.test7).to.be.a(ObservableMap);
         expect((o5.test6 as any).readonly).to.be(true);
         expect((o5.test6 as any).ensureChange).to.be(false);
+        expect((o5.test6 as any).deepCompare).to.be(true);
         expect((o5.test7 as any).readonly).to.be(true);
         expect((o5.test7 as any).ensureChange).to.be(false);
+        expect((o5.test7 as any).deepCompare).to.be(true);
     });
 
     it('测试ObservableSet', function () {
@@ -150,14 +162,16 @@ describe('测试创建可观察变量', function () {
         expect(i1).to.be(i2);
         expect([...i1.value.values()]).to.eql(o1);
 
-        const i3 = new ObservableSet(o2, { readonly: true, ensureChange: false });
-        const i4 = new ObservableSet(i3, { readonly: false, ensureChange: true });
+        const i3 = new ObservableSet(o2, { readonly: true, ensureChange: false, deepCompare: true });
+        const i4 = new ObservableSet(i3, { readonly: false, ensureChange: true, deepCompare: false });
         expect(i3).to.be(i4);
         expect([...i3.value.values()]).to.eql(o2);
         expect(i3.readonly).to.be(true);
         expect(i3.ensureChange).to.be(false);
+        expect(i3.deepCompare).to.be(true);
         expect(i4.readonly).to.be(true);
         expect(i4.ensureChange).to.be(false);
+        expect(i4.deepCompare).to.be(true);
 
         const i5 = ObservableSet.observe(o3);
         const i6 = ObservableSet.observe(i5);
@@ -170,15 +184,17 @@ describe('测试创建可观察变量', function () {
         expect(o4.test4).to.be.a(ObservableSet);
         expect(o4.test5).to.be.a(ObservableSet);
 
-        ObservableSet.observe(o5, 'test6', { readonly: true, ensureChange: false });
-        ObservableSet.observe(o5, ['test7'], { readonly: true, ensureChange: false });
+        ObservableSet.observe(o5, 'test6', { readonly: true, ensureChange: false, deepCompare: true });
+        ObservableSet.observe(o5, ['test7'], { readonly: true, ensureChange: false, deepCompare: true });
 
         expect(o5.test6).to.be.a(ObservableSet);
         expect(o5.test7).to.be.a(ObservableSet);
         expect((o5.test6 as any).readonly).to.be(true);
         expect((o5.test6 as any).ensureChange).to.be(false);
+        expect((o5.test6 as any).deepCompare).to.be(true);
         expect((o5.test7 as any).readonly).to.be(true);
         expect((o5.test7 as any).ensureChange).to.be(false);
+        expect((o5.test7 as any).deepCompare).to.be(true);
     });
 });
 
@@ -283,10 +299,10 @@ describe('测试事件', function () {
     describe('测试ObservableVariable', function () {
 
         it('测试 set', function () {
-            const obj = new ObservableVariable('a');
+            const obj = new ObservableVariable<any>('a');
 
-            function callback_on(newValue: string, oldValue: string) { testResult.push('on', newValue, oldValue) }
-            function callback_once(newValue: string, oldValue: string) { testResult.push('once', newValue, oldValue) }
+            function callback_on(newValue: any, oldValue: any) { testResult.push('on', newValue, oldValue) }
+            function callback_once(newValue: any, oldValue: any) { testResult.push('once', newValue, oldValue) }
 
             obj.on('set', callback_on);
             obj.once('set', callback_once);
@@ -298,6 +314,12 @@ describe('测试事件', function () {
             obj.ensureChange = false;
             obj.value = 'c';
 
+            obj.ensureChange = true;
+            obj.deepCompare = true;
+            obj._changeStealthily(['1']);
+            obj.value = ['1'];
+            obj.value = ['2'];
+
             obj.off('set', callback_on);
             obj.off('set', callback_once);
 
@@ -307,11 +329,12 @@ describe('测试事件', function () {
                 'on', 'b', 'a', 'once', 'b', 'a',
                 'on', 'c', 'b',
                 'on', 'c', 'c',
+                'on', ['2'], ['1'],
             ]);
         });
 
         it('测试 beforeSet', function () {
-            const obj = new ObservableVariable('a');
+            const obj = new ObservableVariable<any>('a');
 
             obj.on('set', (newValue, oldValue) => { testResult.push('set', newValue, oldValue) });
             obj.on('beforeSet', (newValue, oldValue) => { testResult.push('on', newValue, oldValue) });
@@ -351,6 +374,17 @@ describe('测试事件', function () {
             obj.value = 'l';
             expect(obj.value).to.be('h');
 
+            obj.ensureChange = true;
+            obj.deepCompare = true;
+            obj._changeStealthily(['1']);
+
+            obj.once('beforeSet', (newValue, oldValue) => { testResult.push('once8', newValue, oldValue) });
+            obj.value = ['1'];
+            obj.value = ['2'];
+
+            obj.once('beforeSet', (newValue, oldValue, changeTo, oVar) => { testResult.push('once9', newValue, oldValue, oVar); changeTo(['2']); });
+            obj.value = ['3'];
+
             expect(testResult).to.eql([
                 'on', 'b', 'a', 'set', 'b', 'a',
                 'set', 'c', 'b',
@@ -362,6 +396,8 @@ describe('测试事件', function () {
                 'once5', 'j', 'h', obj,
                 'once6', 'h', 'h', 'set', 'h', 'h',
                 'once7', 'l', 'h', obj, 'set', 'h', 'h',
+                'once8', ['2'], ['1'], 'set', ['2'], ['1'],
+                'once9', ['3'], ['2'], obj,
             ]);
         });
     });
@@ -422,7 +458,7 @@ describe('测试事件', function () {
         });
 
         it('测试 update', function () {
-            const obj = new ObservableArray([1]);
+            const obj = new ObservableArray<any>([1]);
 
             obj.on('update', callback);
             obj.on('update', callback2);
@@ -431,10 +467,9 @@ describe('测试事件', function () {
             expect(obj.set(0, 1)).to.be(1);
             expect(obj.set(0, 2)).to.be(2);
 
-            expect(obj.set(1, 2)).to.be(2);
-
             obj.ensureChange = false;
 
+            expect(obj.set(1, 2)).to.be(2);
             expect(obj.set(1, 2)).to.be(2);
 
             obj.off('update', callback2);
@@ -442,20 +477,28 @@ describe('测试事件', function () {
             expect(obj.set(2, 3)).to.be(3);
             expect(obj.set(2, 4)).to.be(4);
 
+            obj.ensureChange = true;
+            obj.deepCompare = true;
+
+            expect(obj.set(3, ['1'])).to.eql(['1']);
+            expect(obj.set(3, ['1'])).to.eql(['1']);
+            expect(obj.set(3, ['2'])).to.eql(['2']);
+
             obj.off('update');
 
-            expect(obj.set(3, 4)).to.be(4);
-            expect(obj.set(3, 5)).to.be(5);
+            expect(obj.set(4, 4)).to.be(4);
+            expect(obj.set(4, 5)).to.be(5);
 
             expect(testResult).to.eql([
                 2, 1, 0, 2, 1, 0, 2, 1, 0,
                 2, 2, 1, 2, 2, 1,
                 4, 3, 2,
+                ['2'], ['1'], 3,
             ]);
         });
 
         it('测试 beforeUpdate', function () {
-            const obj = new ObservableArray([1]);
+            const obj = new ObservableArray<any>([1]);
 
             obj.on('update', (newValue, oldValue, index) => { testResult.push('update', newValue, oldValue, index) });
             obj.on('beforeUpdate', (index, newValue, oldValue, changeTo, oArr) => { testResult.push('on', newValue, oldValue, index, oArr) });
@@ -495,6 +538,17 @@ describe('测试事件', function () {
             expect(obj.set(0, 11)).to.be(11);
             expect(obj.value[0]).to.be(8);
 
+            obj.ensureChange = true;
+            obj.deepCompare = true;
+            obj.value[0] = ['1'];
+
+            obj.once('beforeUpdate', (index, newValue, oldValue, changeTo, oArr) => { testResult.push('once8', newValue, oldValue) });
+            expect(obj.set(0, ['1'])).to.eql(['1']);
+            expect(obj.set(0, ['2'])).to.eql(['2']);
+
+            obj.once('beforeUpdate', (index, newValue, oldValue, changeTo, oArr) => { testResult.push('once9', newValue, oldValue); changeTo(['2']); });
+            expect(obj.set(0, ['3'])).to.eql(['3']);
+
             expect(testResult).to.eql([
                 'on', 2, 1, 0, obj, 'update', 2, 1, 0,
                 'update', 3, 2, 0,
@@ -506,6 +560,8 @@ describe('测试事件', function () {
                 'once5', 10, 8,
                 'once6', 8, 8, 'update', 8, 8, 0,
                 'once7', 11, 8, 'update', 8, 8, 0,
+                'once8', ['2'], ['1'], 'update', ['2'], ['1'], 0,
+                'once9', ['3'], ['2'],
             ]);
         });
     });
@@ -626,7 +682,7 @@ describe('测试事件', function () {
         });
 
         it('测试 update', function () {
-            const obj = new ObservableMap([['1', 1]]);
+            const obj = new ObservableMap<string, any>([['1', 1]]);
 
             obj.on('update', callback);
             obj.on('update', callback2);
@@ -635,10 +691,9 @@ describe('测试事件', function () {
             obj.set('1', 1);
             obj.set('1', 2);
 
-            obj.set('2', 2);
-
             obj.ensureChange = false;
 
+            obj.set('2', 2);
             obj.set('2', 2);
 
             obj.off('update', callback2);
@@ -646,20 +701,28 @@ describe('测试事件', function () {
             obj.set('3', 3);
             obj.set('3', 4);
 
+            obj.ensureChange = true;
+            obj.deepCompare = true;
+
+            obj.set('4', ['1']);
+            obj.set('4', ['1']);
+            obj.set('4', ['2']);
+
             obj.off('update');
 
-            obj.set('4', 4);
-            obj.set('4', 5);
+            obj.set('5', 5);
+            obj.set('5', 6);
 
             expect(testResult).to.eql([
                 2, 1, '1', 2, 1, '1', 2, 1, '1',
                 2, 2, '2', 2, 2, '2',
                 4, 3, '3',
+                ['2'], ['1'], '4',
             ]);
         });
 
         it('测试 beforeUpdate', function () {
-            const obj = new ObservableMap([['1', 1]]);
+            const obj = new ObservableMap<string, any>([['1', 1]]);
 
             obj.on('update', (newValue, oldValue, key) => { testResult.push('update', newValue, oldValue, key) });
             obj.on('beforeUpdate', (key, newValue, oldValue, changeTo, oMap) => { testResult.push('on', newValue, oldValue, key, oMap) });
@@ -699,6 +762,17 @@ describe('测试事件', function () {
             obj.set('1', 11);
             expect(obj.value.get('1')).to.be(8);
 
+            obj.ensureChange = true;
+            obj.deepCompare = true;
+            obj.value.set('1', ['1']);
+
+            obj.once('beforeUpdate', (key, newValue, oldValue, changeTo, oMap) => { testResult.push('once8', newValue, oldValue) });
+            obj.set('1', ['1']);
+            obj.set('1', ['2']);
+
+            obj.once('beforeUpdate', (key, newValue, oldValue, changeTo, oMap) => { testResult.push('once9', newValue, oldValue); changeTo(['2']); });
+            obj.set('1', ['3']);
+
             expect(testResult).to.eql([
                 'on', 2, 1, '1', obj, 'update', 2, 1, '1',
                 'update', 3, 2, '1',
@@ -710,6 +784,8 @@ describe('测试事件', function () {
                 'once5', 10, 8,
                 'once6', 8, 8, 'update', 8, 8, '1',
                 'once7', 11, 8, 'update', 8, 8, '1',
+                'once8', ['2'], ['1'], 'update', ['2'], ['1'], '1',
+                'once9', ['3'], ['2'],
             ]);
         });
     });
@@ -755,6 +831,7 @@ describe('测试ObservableArray 修改操作方法', function () {
 
         expect(obj.set(1, 3)).to.be(3);
 
+        expect(obj.value).to.eql([2, 3]);
         expect(testResult).to.eql([
             'beforeUpdate', 2, 1, 0, obj, 'update', 2, 1, 0,
             'add', 3,
