@@ -10,7 +10,8 @@
         "strict": true,
         "strictPropertyInitialization": false,
         "lib": [
-            "es2016"
+            "es2016",
+            "dom"
         ]
     },
     "exclude": [

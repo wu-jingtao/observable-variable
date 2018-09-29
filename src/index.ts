@@ -8,6 +8,7 @@ export { ObservableArray } from "./ObservableDataType/ObservableArray";
 export { ObservableMap } from "./ObservableDataType/ObservableMap";
 export { ObservableSet } from "./ObservableDataType/ObservableSet";
 export { watch } from "./Helper/Watch";
+export * from "./Helper/PermanentVariable";
 
 //简写
 export const oVar = ObservableVariable.observe;

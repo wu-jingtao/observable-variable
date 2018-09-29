@@ -20,7 +20,7 @@ export interface ObservableVariableOptions {
 /**
  * 可观察改变变量
  */
-export class ObservableVariable<T>{
+export class ObservableVariable<T> {
 
     //#region 静态方法
 

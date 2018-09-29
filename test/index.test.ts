@@ -1,7 +1,7 @@
-import expect = require('expect.js');
 import * as _ from 'lodash';
+import expect = require('expect.js');
 
-import { ObservableVariable, ObservableArray, ObservableMap, ObservableSet } from '../src';
+import { ObservableVariable, ObservableArray, ObservableMap, ObservableSet, watch, setStorageEngine, permanent_oVar } from '../src';
 
 describe('测试创建可观察变量', function () {
 
@@ -1198,6 +1198,197 @@ describe('测试ObservableSet 修改操作方法', function () {
         expect(obj.value.size).to.be(2);
         expect(testResult).to.eql([
             2
+        ]);
+    });
+});
+
+it('测试 watch', function () {
+    const oVar = new ObservableVariable<any>(undefined);
+    const oArr = new ObservableArray<any>([0]);
+    const oSet = new ObservableSet<any>([]);
+    const oMap = new ObservableMap<string, any>([]);
+
+    let testResult = 0;
+
+    const cancel = watch([oVar, oArr, oSet, oMap], () => { testResult++ });
+
+    function test() {
+        oVar.value = 1;         //set
+
+        oArr.push(1);           //add
+        oArr.pop();             //remove
+        oArr.set(0, 1);         //update
+        oArr.value = [];        //set
+
+        oSet.add(1);            //add
+        oSet.delete(1);         //remove
+        oSet.value = new Set(); //set
+
+        oMap.set('a', 1);       //add
+        oMap.delete('a');       //remove
+        oMap.set('1', 2);       //update
+        oMap.value = new Map(); //set
+    }
+
+    test();
+
+    cancel();
+
+    test();
+
+    expect(testResult).to.be(12);
+});
+
+describe('测试 PermanentVariable', function () {
+
+    const testResult: any[] = [];
+
+    afterEach(function () {
+        testResult.length = 0;
+    });
+
+    it('测试 创建', function () {
+        setStorageEngine({
+            set(key, value, expire) {
+                testResult.push('set', key, value, expire);
+            },
+            get(key) {
+                testResult.push('get', key);
+                return undefined;
+            },
+            delete(key) {
+                testResult.push('delete', key);
+            },
+            has(key) {
+                testResult.push('has', key);
+                return true;
+            }
+        });
+
+        const oVar = permanent_oVar('test');
+
+        expect(testResult).to.eql([
+            'has', 'test', 'get', 'test'
+        ]);
+    });
+
+    it('测试 defaultValue', function () {
+        setStorageEngine({
+            set(key, value, expire) {
+                testResult.push('set', key, value, expire);
+            },
+            get(key) {
+                testResult.push('get', key);
+                return undefined;
+            },
+            delete(key) {
+                testResult.push('delete', key);
+            },
+            has(key) {
+                testResult.push('has', key);
+                return false;
+            }
+        });
+
+        const oVar: ObservableVariable<number> = permanent_oVar('test', { defaultValue: 123 });
+
+        expect(oVar.value).to.be(123);
+        expect(testResult).to.eql([
+            'has', 'test'
+        ]);
+    });
+
+    it('测试 throttle', function (done) {
+        setStorageEngine({
+            set(key, value, expire) {
+                testResult.push('set', key, value, expire);
+
+                if (value !== 2) {    //lodash的throttle第一次会立即执行
+                    expect(Date.now() - start).to.above(499);
+                    expect(testResult).to.eql([
+                        'has', 'test', 'get', 'test',
+                        'set', 'test', 2, undefined,
+                        'set', 'test', 7, undefined,
+                    ]);
+
+                    done();
+                }
+            },
+            get(key) {
+                testResult.push('get', key);
+                return 1;
+            },
+            delete(key) {
+                testResult.push('delete', key);
+            },
+            has(key) {
+                testResult.push('has', key);
+                return true;
+            }
+        });
+
+        const oVar = permanent_oVar('test', { throttle: 500 });
+        expect(oVar.value).to.be(1);
+        const start = Date.now();
+        oVar.value = 2;
+        oVar.value = 3;
+        setTimeout(() => oVar.value = 4, 100);
+        setTimeout(() => oVar.value = 5, 200);
+        setTimeout(() => oVar.value = 6, 300);
+        setTimeout(() => oVar.value = 7, 400);
+    });
+
+    it('测试 expire', function () {
+        setStorageEngine({
+            set(key, value, expire) {
+                testResult.push('set', key, value, expire);
+            },
+            get(key) {
+                testResult.push('get', key);
+                return 123;
+            },
+            delete(key) {
+                testResult.push('delete', key);
+            },
+            has(key) {
+                testResult.push('has', key);
+                return true;
+            }
+        });
+
+        const oVar = permanent_oVar('test', { expire: 1000, throttle: 0 });
+        expect(oVar.value).to.be(123);
+        oVar.value = 456;
+        expect(oVar.value).to.be(456);
+        expect(testResult).to.eql([
+            'has', 'test', 'get', 'test',
+            'set', 'test', 456, 1000
+        ]);
+    });
+
+    it('测试 init', function () {
+        setStorageEngine({
+            set(key, value, expire) {
+                testResult.push('set', key, value, expire);
+            },
+            get(key) {
+                testResult.push('get', key);
+                return 123;
+            },
+            delete(key) {
+                testResult.push('delete', key);
+            },
+            has(key) {
+                testResult.push('has', key);
+                return true;
+            }
+        });
+
+        const oVar = permanent_oVar('test', { init: v => { testResult.push('init', v); return 456; } });
+        expect(oVar.value).to.be(456);
+        expect(testResult).to.eql([
+            'has', 'test', 'get', 'test',
+            'init', 123
         ]);
     });
 });
