@@ -1387,11 +1387,15 @@ describe('测试 PermanentVariable', function () {
             }
         });
 
-        const oVar = permanent_oVar('test', { init: v => { testResult.push('init', v); return 456; } });
+        const oVar = permanent_oVar('test', {
+            init: (value, save, ov) => {
+                testResult.push('init', value, typeof save, ov); return 456;
+            }
+        });
         expect(oVar.value).to.be(456);
         expect(testResult).to.eql([
             'has', 'test', 'get', 'test',
-            'init', 123
+            'init', 123, 'function', oVar
         ]);
     });
 });

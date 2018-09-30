@@ -107,7 +107,7 @@ if (hasLocalStorage) {
 
 //#region PermanentVariable
 
-interface PermanentVariableOptions<D, T> {
+interface PermanentVariableOptions<D, T, O> {
     /**
      * 默认值
      */
@@ -125,55 +125,56 @@ interface PermanentVariableOptions<D, T> {
 
     /**
      * 数据从存储引擎读取出来之后触发，可用于对值进行修改
+     * @param save 触发保存数据
      */
-    init?: (value: T) => T;
+    init?: (value: T, save: () => void, oVar: O) => T;
 }
 
 /**
  * 自动读取和保存数据的oVar
  */
-export function permanent_oVar<T>(key: string, options: PermanentVariableOptions<T, T> & ObservableVariableOptions = {}): ObservableVariable<T> {
+export function permanent_oVar<T>(key: string, options: PermanentVariableOptions<T, T, ObservableVariable<T>> & ObservableVariableOptions = {}): ObservableVariable<T> {
     const { defaultValue, expire, throttle = 2000, init } = options;
     const _value = new ObservableVariable<T>(storageEngine.has(key) ? storageEngine.get(key) : defaultValue, options);
-    const save = () => storageEngine.set(key, _value, expire);
-    watch([_value], throttle ? _throttle(save, throttle) : save);
-    if (init) _value._changeStealthily(init(_value.value));
+    let save = () => storageEngine.set(key, _value, expire);
+    watch([_value], save = throttle ? _throttle(save, throttle) : save);
+    if (init) _value._changeStealthily(init(_value.value, save, _value));
     return _value;
 }
 
 /**
  * 自动读取和保存数据的oArr
  */
-export function permanent_oArr<T>(key: string, options: PermanentVariableOptions<T[], T[]> & ObservableArrayOptions = {}): ObservableArray<T> {
+export function permanent_oArr<T>(key: string, options: PermanentVariableOptions<T[], T[], ObservableArray<T>> & ObservableArrayOptions = {}): ObservableArray<T> {
     const { defaultValue = [], expire, throttle = 2000, init } = options;
     const _value = new ObservableArray<T>(storageEngine.has(key) ? storageEngine.get(key) : defaultValue, options);
-    const save = () => storageEngine.set(key, _value, expire);
-    watch([_value], throttle ? _throttle(save, throttle) : save);
-    if (init) _value._changeStealthily(init(_value.value));
+    let save = () => storageEngine.set(key, _value, expire);
+    watch([_value], save = throttle ? _throttle(save, throttle) : save);
+    if (init) _value._changeStealthily(init(_value.value, save, _value));
     return _value;
 }
 
 /**
  * 自动读取和保存数据的oSet
  */
-export function permanent_oSet<T>(key: string, options: PermanentVariableOptions<Set<T> | ReadonlyArray<T>, Set<T>> & ObservableVariableOptions = {}): ObservableSet<T> {
+export function permanent_oSet<T>(key: string, options: PermanentVariableOptions<Set<T> | ReadonlyArray<T>, Set<T>, ObservableSet<T>> & ObservableVariableOptions = {}): ObservableSet<T> {
     const { defaultValue = [], expire, throttle = 2000, init } = options;
     const _value = new ObservableSet<T>(storageEngine.has(key) ? storageEngine.get(key) : defaultValue, options);
-    const save = () => storageEngine.set(key, _value, expire);
-    watch([_value], throttle ? _throttle(save, throttle) : save);
-    if (init) _value._changeStealthily(init(_value.value));
+    let save = () => storageEngine.set(key, _value, expire);
+    watch([_value], save = throttle ? _throttle(save, throttle) : save);
+    if (init) _value._changeStealthily(init(_value.value, save, _value));
     return _value;
 }
 
 /**
  * 自动读取和保存数据的oMap
  */
-export function permanent_oMap<K, V>(key: string, options: PermanentVariableOptions<Map<K, V> | ReadonlyArray<[K, V]>, Map<K, V>> & ObservableVariableOptions = {}): ObservableMap<K, V> {
+export function permanent_oMap<K, V>(key: string, options: PermanentVariableOptions<Map<K, V> | ReadonlyArray<[K, V]>, Map<K, V>, ObservableMap<K, V>> & ObservableVariableOptions = {}): ObservableMap<K, V> {
     const { defaultValue = [], expire, throttle = 2000, init } = options;
     const _value = new ObservableMap<K, V>(storageEngine.has(key) ? storageEngine.get(key) : defaultValue, options);
-    const save = () => storageEngine.set(key, _value, expire);
-    watch([_value], throttle ? _throttle(save, throttle) : save);
-    if (init) _value._changeStealthily(init(_value.value));
+    let save = () => storageEngine.set(key, _value, expire);
+    watch([_value], save = throttle ? _throttle(save, throttle) : save);
+    if (init) _value._changeStealthily(init(_value.value, save, _value));
     return _value;
 }
 

@@ -1,6 +1,6 @@
 {
     "name": "observable-variable",
-    "version": "0.2.9",
+    "version": "0.2.10",
     "description": "包装变量或对象，当其值发生改变的时候可以通过事件监听",
     "main": "./bin/index.js",
     "types": "./bin/index.d.ts",
