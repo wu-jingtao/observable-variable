@@ -13,7 +13,7 @@ export interface StorageEngine {
      * 保存数据
      * @param expire 该条数据多久之后过期（毫秒）。为0或空则表示不过期。
      */
-    set: (key: string, value: any, expire?: number) => void;
+    set: (key: string, value: ObservableVariable<any>, expire?: number) => void;
 
     /**
      * 读取数据
@@ -66,7 +66,7 @@ if (hasLocalStorage) {
     }
 
     watch([expireList], _throttle(() => {
-        localStorage.setItem('__observable-variable.PermanentVariable.expireList__', JSON.stringify(expireList.value));
+        localStorage.setItem('__observable-variable.PermanentVariable.expireList__', JSON.stringify(expireList));
 
         if (timer === undefined && expireList.size > 0)
             timer = setInterval(deleteExpiredKey, 1000 * 60);    //每分钟检查一次
@@ -135,7 +135,7 @@ interface PermanentVariableOptions<D, T> {
 export function permanent_oVar<T>(key: string, options: PermanentVariableOptions<T, T> = {}): ObservableVariable<T> {
     const { defaultValue, expire, throttle = 2000, init } = options;
     const _value = new ObservableVariable<T>(storageEngine.has(key) ? storageEngine.get(key) : defaultValue);
-    const save = () => storageEngine.set(key, _value.value, expire);
+    const save = () => storageEngine.set(key, _value, expire);
     watch([_value], throttle ? _throttle(save, throttle) : save);
     if (init) _value._changeStealthily(init(_value.value));
     return _value;
@@ -147,7 +147,7 @@ export function permanent_oVar<T>(key: string, options: PermanentVariableOptions
 export function permanent_oArr<T>(key: string, options: PermanentVariableOptions<T[], T[]> = {}): ObservableArray<T> {
     const { defaultValue = [], expire, throttle = 2000, init } = options;
     const _value = new ObservableArray<T>(storageEngine.has(key) ? storageEngine.get(key) : defaultValue);
-    const save = () => storageEngine.set(key, _value.value, expire);
+    const save = () => storageEngine.set(key, _value, expire);
     watch([_value], throttle ? _throttle(save, throttle) : save);
     if (init) _value._changeStealthily(init(_value.value));
     return _value;
@@ -159,7 +159,7 @@ export function permanent_oArr<T>(key: string, options: PermanentVariableOptions
 export function permanent_oSet<T>(key: string, options: PermanentVariableOptions<Set<T> | ReadonlyArray<T>, Set<T>> = {}): ObservableSet<T> {
     const { defaultValue = [], expire, throttle = 2000, init } = options;
     const _value = new ObservableSet<T>(storageEngine.has(key) ? storageEngine.get(key) : defaultValue);
-    const save = () => storageEngine.set(key, _value.value, expire);
+    const save = () => storageEngine.set(key, _value, expire);
     watch([_value], throttle ? _throttle(save, throttle) : save);
     if (init) _value._changeStealthily(init(_value.value));
     return _value;
@@ -171,7 +171,7 @@ export function permanent_oSet<T>(key: string, options: PermanentVariableOptions
 export function permanent_oMap<K, V>(key: string, options: PermanentVariableOptions<Map<K, V> | ReadonlyArray<[K, V]>, Map<K, V>> = {}): ObservableMap<K, V> {
     const { defaultValue = [], expire, throttle = 2000, init } = options;
     const _value = new ObservableMap<K, V>(storageEngine.has(key) ? storageEngine.get(key) : defaultValue);
-    const save = () => storageEngine.set(key, _value.value, expire);
+    const save = () => storageEngine.set(key, _value, expire);
     watch([_value], throttle ? _throttle(save, throttle) : save);
     if (init) _value._changeStealthily(init(_value.value));
     return _value;

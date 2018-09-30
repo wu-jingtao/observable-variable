@@ -1250,7 +1250,7 @@ describe('测试 PermanentVariable', function () {
     it('测试 创建', function () {
         setStorageEngine({
             set(key, value, expire) {
-                testResult.push('set', key, value, expire);
+                testResult.push('set', key, value.value, expire);
             },
             get(key) {
                 testResult.push('get', key);
@@ -1275,7 +1275,7 @@ describe('测试 PermanentVariable', function () {
     it('测试 defaultValue', function () {
         setStorageEngine({
             set(key, value, expire) {
-                testResult.push('set', key, value, expire);
+                testResult.push('set', key, value.value, expire);
             },
             get(key) {
                 testResult.push('get', key);
@@ -1301,9 +1301,9 @@ describe('测试 PermanentVariable', function () {
     it('测试 throttle', function (done) {
         setStorageEngine({
             set(key, value, expire) {
-                testResult.push('set', key, value, expire);
+                testResult.push('set', key, value.value, expire);
 
-                if (value !== 2) {    //lodash的throttle第一次会立即执行
+                if (value.value !== 2) {    //lodash的throttle第一次会立即执行
                     expect(Date.now() - start).to.above(499);
                     expect(testResult).to.eql([
                         'has', 'test', 'get', 'test',
@@ -1341,7 +1341,7 @@ describe('测试 PermanentVariable', function () {
     it('测试 expire', function () {
         setStorageEngine({
             set(key, value, expire) {
-                testResult.push('set', key, value, expire);
+                testResult.push('set', key, value.value, expire);
             },
             get(key) {
                 testResult.push('get', key);
@@ -1369,7 +1369,7 @@ describe('测试 PermanentVariable', function () {
     it('测试 init', function () {
         setStorageEngine({
             set(key, value, expire) {
-                testResult.push('set', key, value, expire);
+                testResult.push('set', key, value.value, expire);
             },
             get(key) {
                 testResult.push('get', key);
