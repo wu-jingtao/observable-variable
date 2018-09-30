@@ -98,7 +98,7 @@ if (hasLocalStorage) {
             localStorage.removeItem(key);
         },
         has(key) {
-            return localStorage.getItem(key) === null;
+            return localStorage.getItem(key) !== null;
         }
     });
 }
