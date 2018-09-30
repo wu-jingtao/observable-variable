@@ -1265,8 +1265,11 @@ describe('测试 PermanentVariable', function () {
             }
         });
 
-        const oVar = permanent_oVar('test');
+        const oVar = permanent_oVar('test', { deepCompare: true, ensureChange: false, readonly: true });
 
+        expect(oVar.deepCompare).to.be(true);
+        expect(oVar.ensureChange).to.be(false);
+        expect(oVar.readonly).to.be(true);
         expect(testResult).to.eql([
             'has', 'test', 'get', 'test'
         ]);
