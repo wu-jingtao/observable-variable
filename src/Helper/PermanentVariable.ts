@@ -40,8 +40,12 @@ export function setStorageEngine(engine: StorageEngine): void {
     storageEngine = engine;
 }
 
+//判断localStorage是否存在
+let hasLocalStorage = false;
+try { hasLocalStorage = localStorage ? true : false } catch { }
+
 //配置默认的localStorage引擎
-if (eval('this').localStorage) {
+if (hasLocalStorage) {
     //到期的时间列表
     const expireList = new ObservableMap<string, number>(JSON.parse(localStorage.getItem('__observable-variable.PermanentVariable.expireList__') || '[]'));
 
