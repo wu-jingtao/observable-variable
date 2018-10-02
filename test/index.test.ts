@@ -791,6 +791,12 @@ describe('测试事件', function () {
     });
 });
 
+it('测试ObservableArray first、last属性', function () {
+    const oArr = new ObservableArray([1, 2, 3]);
+    expect(oArr.first).to.be(1);
+    expect(oArr.last).to.be(3);
+});
+
 describe('测试ObservableArray 修改操作方法', function () {
 
     it('测试 属性length', function () {

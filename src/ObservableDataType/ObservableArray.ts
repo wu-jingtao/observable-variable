@@ -89,6 +89,20 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
         }
     }
 
+    /**
+     * 获取数组中第一个元素
+     */
+    get first() {
+        return this._value[0];
+    }
+
+    /**
+     * 获取数组中最后一个元素
+     */
+    get last() {
+        return this._value[this._value.length - 1];
+    }
+
     //#endregion
 
     //#region 事件绑定方法
