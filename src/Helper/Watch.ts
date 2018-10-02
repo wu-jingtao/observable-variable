@@ -5,21 +5,19 @@ import { ObservableVariable } from "../ObservableDataType/ObservableVariable";
  * 返回一个off方法用于取消监听变化
  */
 export function watch(items: ObservableVariable<any>[], callback: () => void) {
-    function listener() { callback() }
-
     items.forEach((item: any) => {
-        item.on('set', listener);
-        item.on('add', listener);
-        item.on('remove', listener);
-        item.on('update', listener);
+        item.on('set', callback);
+        item.on('add', callback);
+        item.on('remove', callback);
+        item.on('update', callback);
     });
 
     return function off() {
         items.forEach((item: any) => {
-            item.off('set', listener);
-            item.off('add', listener);
-            item.off('remove', listener);
-            item.off('update', listener);
+            item.off('set', callback);
+            item.off('add', callback);
+            item.off('remove', callback);
+            item.off('update', callback);
         });
     }
 }
