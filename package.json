@@ -1,12 +1,13 @@
 {
     "name": "observable-variable",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "description": "包装变量或对象，当其值发生改变的时候可以通过事件监听",
     "main": "./bin/index.js",
     "types": "./bin/index.d.ts",
     "scripts": {
         "test": "mocha --require ts-node/register ./test/index.test.ts",
-        "compile": "gulp compile"
+        "compile": "gulp compile",
+        "packet": "webpack --config webpack.config.js"
     },
     "keywords": [
         "observable",
@@ -24,19 +25,21 @@
     "homepage": "https://github.com/mx601595686/observable-variable#readme",
     "devDependencies": {
         "@types/expect.js": "^0.3.29",
-        "@types/lodash": "^4.14.119",
+        "@types/lodash": "^4.14.120",
         "@types/lodash.isequal": "^4.5.3",
         "@types/lodash.throttle": "^4.1.4",
         "@types/mocha": "^5.2.5",
-        "@types/node": "^10.12.18",
+        "@types/node": "^10.12.19",
         "expect.js": "^0.3.1",
         "gulp": "^4.0.0",
         "gulp-sourcemaps": "^2.6.4",
         "gulp-typescript": "^5.0.0",
         "lodash": "^4.17.11",
         "mocha": "^5.2.0",
-        "ts-node": "^7.0.1",
-        "typescript": "^3.2.2"
+        "ts-node": "^8.0.2",
+        "typescript": "^3.2.4",
+        "webpack": "^4.29.0",
+        "webpack-cli": "^3.2.1"
     },
     "dependencies": {
         "lodash.isequal": "^4.5.0",

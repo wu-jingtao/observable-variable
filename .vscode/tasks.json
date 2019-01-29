@@ -9,6 +9,12 @@
             "command": "npm run compile"
         },
         {
+            /* 先编译在打包 */
+            "label": "浏览器端打包",
+            "type": "shell",
+            "command": "npm run packet"
+        },
+        {
             "label": "测试",
             "type": "shell",
             "command": "npm run test"
