@@ -1,14 +1,14 @@
-import { ObservableVariable } from "../ObservableDataType/ObservableVariable";
+import { ObservableVariable } from '../ObservableDataType/ObservableVariable';
 
 /**
- * 观察一个或多个变量的改变。对于数组、Map、Set，添加或删除或更新元素操作也会触发。   
- * 返回一个off方法用于取消监听变化
+ * 观察一个或多个变量的变化，监听set、add、delete、update事件   
+ * 返回一个off方法用于取消监听
  */
-export function watch(items: ObservableVariable<any>[], callback: () => void) {
+export function watch(items: ObservableVariable<any>[], callback: () => void): () => void {
     items.forEach((item: any) => {
         item.on('set', callback);
         item.on('add', callback);
-        item.on('remove', callback);
+        item.on('delete', callback);
         item.on('update', callback);
     });
 
@@ -16,8 +16,8 @@ export function watch(items: ObservableVariable<any>[], callback: () => void) {
         items.forEach((item: any) => {
             item.off('set', callback);
             item.off('add', callback);
-            item.off('remove', callback);
+            item.off('delete', callback);
             item.off('update', callback);
         });
-    }
+    };
 }

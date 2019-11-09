@@ -1,67 +1,62 @@
-import isDeepEqual = require('lodash.isequal');
+import isDeepEqual from 'lodash.isequal';
 
-export interface ObservableVariableOptions {
+/**
+ * 可观察变量配置参数
+ */
+export interface IObservableVariableOptions {
     /**
-     * 该变量是否是只读的，默认false
+     * 该变量是否可以被序列化(toJSON)，默认true
      */
-    readonly?: boolean;
-
+    serializable?: boolean;
     /**
-     * 在触发'beforeSet'、'set'、'beforeUpdate'、'update'事件之前确保新值不等于旧值。默认：true
+     * 在触发'set'、'update'事件之前确保新值不等于旧值。默认：true
      */
     ensureChange?: boolean;
-
     /**
-     * 在对比值是否发生时，是否进行深度对比，默认false
+     * 在对比新值是否不等于旧值时，是否进行深度对比(对数组和对象非常有用)。默认false
      */
     deepCompare?: boolean;
 }
 
 /**
- * 可观察改变变量
+ * 可观察变量
  */
 export class ObservableVariable<T> {
-
-    //#region 静态方法
+    protected _value: T;
+    protected _serializable: boolean;
+    protected _ensureChange: boolean;
+    protected _deepCompare: boolean;
+    protected _onSet: Set<(newValue: T, oldValue: T, oVar: ObservableVariable<T>) => void> = new Set();
+    protected _onBeforeSet?: (newValue: T, oldValue: T, oVar: ObservableVariable<T>) => T;
 
     /**
-     * 将一个变量转换成可观察变量，相当于 new ObservableVariable(value)
+     * 变量值，设置值将触发beforeSet和set事件
      */
-    static observe<T>(value: ObservableVariable<T> | T, options?: ObservableVariableOptions): ObservableVariable<T>;
-    /**
-     * 将对象中指定位置的一个变量转换成可观察变量，路径通过`.`分割
-     */
-    static observe(object: object, path: string, options?: ObservableVariableOptions): void;
-    /**
-     * 将对象中指定位置的一个变量转换成可观察变量
-     */
-    static observe(object: object, path: string[], options?: ObservableVariableOptions): void;
-    static observe(value: any, arg1?: any, arg2?: any): any {
-        if (undefined === arg1)
-            return new ObservableVariable(value);
-        else if ('[object Object]' === Object.prototype.toString.call(arg1))
-            return new ObservableVariable(value, arg1);
-        else if ('string' === typeof arg1)
-            arg1 = arg1.split('.');
+    get value(): T {
+        return this._value;
+    }
+    set value(v: T) {
+        if (this._onBeforeSet) v = this._onBeforeSet(v, this._value, this);
+        if (this._ensureChange && (this._deepCompare ? isDeepEqual(v, this._value) : v === this._value)) return;
 
-        for (let index = 0, end = arg1.length - 1; index < end; index++) {
-            value = value[arg1[index]];
-        }
-
-        value[arg1[arg1.length - 1]] = new ObservableVariable(value[arg1[arg1.length - 1]], arg2);
+        if (this._onSet.size > 0) {
+            const oldValue = this._value;
+            this._value = v;
+            for (const callback of this._onSet) callback(v, oldValue, this);
+        } else
+            this._value = v;
     }
 
-    //#endregion
-
-    //#region 属性
-
-    protected _value: T;  //保存的变量值
-    protected _onSet: Set<(newValue: T, oldValue: T) => void> = new Set();
-    protected _onBeforeSet: (newValue: T, oldValue: T, changeTo: (value: T) => void, oVar: ObservableVariable<T>) => boolean | void;
-
-    constructor(value: ObservableVariable<T> | T, { readonly = false, ensureChange = true, deepCompare = false }: ObservableVariableOptions = {}) {
-        //确保不重复包裹变量
-        if (value instanceof ObservableVariable) {
+    /**
+     * 注意：如果要继承ObservableVariable，那么在子类的构造中
+     * 在执行 super() 之后一定要判断一下 if(this === value)
+     * 如果相等则说明是重复包裹，后面的代码则不应当执行
+     * 
+     * @param value 可观察变量初始值
+     * @param options 可观察变量配置
+     */
+    constructor(value: ObservableVariable<T> | T, options?: IObservableVariableOptions) {
+        if (value instanceof ObservableVariable) { // 确保不重复包裹变量
             /**
              * 如果造中使用了return，那么不管是父类还是子类的原型都将不会附加到该对象上
              * 构造函数也就退化成了普通方法
@@ -70,93 +65,27 @@ export class ObservableVariable<T> {
             return value;
         }
 
-        /**
-         * 注意：如果要继承ObservableVariable，那么在子类的构造中
-         * 在执行super(value)之后一定要判断一下 if(this === value)
-         * 如果相等则说明是重复包裹，后面的代码则不应当执行
-         */
+        const { serializable = true, ensureChange = true, deepCompare = false } = options || {};
         this._value = value;
-        this.readonly = readonly;
-        this.ensureChange = ensureChange;
-        this.deepCompare = deepCompare;
+        this._serializable = serializable;
+        this._ensureChange = ensureChange;
+        this._deepCompare = deepCompare;
+    }
+
+    toJSON(): any {
+        return this._serializable ? this._value : undefined;
     }
 
     /**
-     * 该变量是否是只读的，默认false
+     * 当改变变量值的时候触发
      */
-    public readonly: boolean;
-
+    on(event: 'set', callback: (newValue: T, oldValue: T, oVar: this) => void): void;
     /**
-     * 在触发'beforeSet'、'set'、'beforeUpdate'、'update'事件之前确保新值不等于旧值。默认：true
+     * 在变量值发生改变之前触发，返回一个新的值用于替换要设置的值
+     * 注意：该回调只允许设置一个，重复设置将覆盖之前的回调。该回调不会受ensureChange的影响，只要用户设置变量值就会被触发
      */
-    public ensureChange: boolean;
-
-    /**
-     * 在对比值是否发生时，是否进行深度对比，默认false
-     */
-    public deepCompare: boolean;
-
-    public get value(): T {
-        return this._value;
-    }
-
-    public set value(v: T) {
-        if (this.readonly)
-            throw new Error(`尝试修改一个只读的 ${this.constructor.name}`);
-
-        if (this.ensureChange && (this.deepCompare ? isDeepEqual(v, this._value) : v === this._value)) return;
-
-        if (this._onBeforeSet !== undefined) {
-            if (this._onBeforeSet(v, this._value, value => { v = value }, this) === false)
-                return;
-            else if (this.ensureChange && (this.deepCompare ? isDeepEqual(v, this._value) : v === this._value))
-                return; //确保在_onBeforeSet更改后依然是不相等的
-        }
-
-        if (this._onSet.size > 0) {
-            const oldValue = this._value;
-            this._value = v;
-            this._onSet.forEach(callback => callback(v, oldValue));
-        } else
-            this._value = v;
-    }
-
-    //#endregion
-
-    /**
-     * 改变某一个值而不触发onSet和onBeforeSet事件。
-     * 注意，readonly 将不会起作用
-     */
-    public _changeStealthily(v: T): void {
-        this._value = v;
-    }
-
-    //#region toJSON
-
-    /**
-     * 该变量是否允许toJSON，默认true
-     */
-    public serializable: boolean = true;
-
-    protected toJSON(): any {
-        return this.serializable ? this._value : undefined;
-    }
-
-    //#endregion
-
-    //#region 事件绑定方法
-
-    /**
-     * 当设置值的时候触发
-     */
-    on(event: 'set', callback: (newValue: T, oldValue: T) => void): void;
-    /**
-     * 在值发生改变之前触发，返回false表示阻止更改，如果要更改newValue可以调用changeTo。
-     * 注意：该回调只允许设置一个，重复设置将覆盖之前的回调，同时设置的回调是以同步方式执行的。
-     * 注意：如果要执行changeTo，则就不应再返回false了，否则将使得changeTo无效。
-     */
-    on(event: 'beforeSet', callback: (newValue: T, oldValue: T, changeTo: (value: T) => void, oVar: this) => boolean | void): void;
-    on(event: any, callback: any): any {
+    on(event: 'beforeSet', callback: (newValue: T, oldValue: T, oVar: this) => T): void;
+    on(event: any, callback: any): void {
         switch (event) {
             case 'set':
                 this._onSet.add(callback);
@@ -168,26 +97,28 @@ export class ObservableVariable<T> {
         }
     }
 
-    once(event: 'set', callback: (newValue: T, oldValue: T) => void): void;
-    once(event: 'beforeSet', callback: (newValue: T, oldValue: T, changeTo: (value: T) => void, oVar: this) => boolean | void): void;
-    once(event: any, callback: any): any {
-        const tempCallback = (...args: any[]) => { this.off(event, tempCallback); return callback(...args); };
+    once(event: 'set', callback: (newValue: T, oldValue: T, oVar: this) => void): void;
+    once(event: 'beforeSet', callback: (newValue: T, oldValue: T, oVar: this) => T): void;
+    once(event: any, callback: any): void {
+        const tempCallback = (...args: any[]): any => { this.off(event, tempCallback); return callback(...args) };
         this.on(event, tempCallback);
     }
 
-    off(event: 'set', callback?: (newValue: T, oldValue: T) => void): void;
-    off(event: 'beforeSet', callback?: (newValue: T, oldValue: T, changeTo: (value: T) => void, oVar: this) => boolean | void): void;
-    off(event: any, callback: any): any {
+    off(event: 'set', callback?: (newValue: T, oldValue: T, oVar: this) => void): void;
+    off(event: 'beforeSet', callback?: (newValue: T, oldValue: T, oVar: this) => T): void;
+    off(event: any, callback: any): void {
         switch (event) {
             case 'set':
                 callback ? this._onSet.delete(callback) : this._onSet.clear();
                 break;
 
             case 'beforeSet':
-                this._onBeforeSet = undefined as any;
+                this._onBeforeSet = undefined;
                 break;
         }
     }
+}
 
-    //#endregion
+export function oVar<T>(value: ObservableVariable<T> | T, options?: IObservableVariableOptions): ObservableVariable<T> {
+    return new ObservableVariable(value, options);
 }
