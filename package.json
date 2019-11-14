@@ -29,7 +29,7 @@
         "@types/lodash.isequal": "^4.5.5",
         "@types/mocha": "^5.2.7",
         "@types/node": "^12.12.7",
-        "eslint-config-sufu": "^0.1.4",
+        "eslint-config-sufu": "^0.1.7",
         "expect.js": "^0.3.1",
         "gulp": "^4.0.2",
         "gulp-typescript": "^5.0.1",
