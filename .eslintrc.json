@@ -1,3 +1,6 @@
 {
-    "extends": "sufu"
+    "extends": "sufu",
+    "rules": {
+        "no-constructor-return": "off"
+    }
 }
