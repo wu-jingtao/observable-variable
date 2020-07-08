@@ -1,5 +1,5 @@
 {
-    "extends": "sufu",
+    "extends": ["sufu", "sufu/typescript"],
     "rules": {
         "no-constructor-return": "off"
     }

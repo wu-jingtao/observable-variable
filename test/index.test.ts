@@ -31,6 +31,7 @@ describe('测试 创建可观察变量', function () {
 
         const i1 = oArr(o1);
         expect(i1.value).to.be(o1);
+        expect([...i1]).to.be.eql(o1);
         expect((i1 as any)._serializable).to.be(true);
         expect((i1 as any)._ensureChange).to.be(true);
         expect((i1 as any)._deepCompare).to.be(false);
@@ -52,6 +53,7 @@ describe('测试 创建可观察变量', function () {
         const i2 = oMap(o2);
         expect(i1.value).to.be.a(Map);
         expect(i2.value).to.be.a(Map);
+        expect([...i1]).to.be.eql([['key', 'value']]);
         expect([...i1.value.entries()]).to.be.eql([['key', 'value']]);
         expect(i2.value).to.be(o2);
     });
@@ -64,7 +66,8 @@ describe('测试 创建可观察变量', function () {
         const i2 = oSet(o2);
         expect(i1.value).to.be.a(Set);
         expect(i2.value).to.be.a(Set);
-        expect([...i1.value]).to.be.eql([['test1', 'test2']]);
+        expect([...i1]).to.be.eql([['test1', 'test2']]);
+        expect([...i1.values()]).to.be.eql([['test1', 'test2']]);
         expect(i2.value).to.be(o2);
     });
 });
@@ -123,8 +126,8 @@ describe('测试 事件', function () {
             const o3 = oVar('a', { ensureChange: false });
             const o4 = oVar(['a'], { deepCompare: true });
 
-            function callback_on(...args: any[]): void { testResult.push('on', ...args) }
-            function callback_once(...args: any[]): void { testResult.push('once', ...args) }
+            function callback_on(...args: any[]): void { testResult.push('on', ...args) } // eslint-disable-line
+            function callback_once(...args: any[]): void { testResult.push('once', ...args) } // eslint-disable-line
 
             o1.on('set', callback_on);
             o1.once('set', callback_once);
@@ -450,13 +453,13 @@ describe('测试 ObservableArray 修改操作方法', function () {
         const obj = oArr([1, 1, 2, 2]);
         obj.on('delete', value => testResult.push(value));
 
-        expect(obj.deleteAll(1)).to.be(obj);
-        expect(obj.deleteAll(2)).to.be(obj);
+        expect(obj.deleteAll(1)).to.be(2);
+        expect(obj.deleteAll(2)).to.be(2);
 
         expect(obj.value.length).to.be(0);
 
-        expect(obj.deleteAll(1)).to.be(obj);
-        expect(obj.deleteAll(2)).to.be(obj);
+        expect(obj.deleteAll(1)).to.be(0);
+        expect(obj.deleteAll(2)).to.be(0);
 
         expect(testResult).to.eql([
             1, 1, 2, 2
@@ -510,13 +513,13 @@ describe('测试 ObservableArray 修改操作方法', function () {
     });
 
     it('测试 splice', function () {
-        const testArray = oArr(actual());
-        testArray.on('add', value => testResult.push(value));
-        testArray.on('delete', value => testResult.push(value));
-
         function actual(): number[] {
             return _.range(10);
         }
+        
+        const testArray = oArr(actual());
+        testArray.on('add', value => testResult.push(value));
+        testArray.on('delete', value => testResult.push(value));
 
         function test(): ObservableArray<number> {
             testArray.value = _.range(10);
