@@ -1,8 +1,8 @@
 import { ObservableVariable } from '../ObservableDataType/ObservableVariable';
 
 /**
- * 观察一个或多个变量的变化，监听set、add、delete、update事件   
- * 返回一个off方法用于取消监听
+ * 观察一个或多个变量的变化，监听 set、add、delete、update 事件   
+ * 返回一个 off 方法用于取消监听
  */
 export function watch(items: ObservableVariable<any>[], callback: () => void): () => void {
     items.forEach((item: any) => {
