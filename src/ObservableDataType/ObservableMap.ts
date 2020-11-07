@@ -1,15 +1,15 @@
 import isDeepEqual from 'lodash.isequal';
-import { ObservableVariable, ObservableVariableOptions } from './ObservableVariable';
+import { ObservableVariable } from './ObservableVariable';
+import type { ObservableVariableOptions } from './ObservableVariable';
 
 /**
  * 可观察改变 Map
  */
-export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
+export class ObservableMap<K, V> extends ObservableVariable<ReadonlyMap<K, V>> {
     protected readonly _onAdd: Set<(value: V, key: K, oMap: ObservableMap<K, V>) => void> = new Set();
     protected readonly _onDelete: Set<(value: V, key: K, oMap: ObservableMap<K, V>) => void> = new Set();
     protected readonly _onUpdate: Set<(newValue: V, oldValue: V, key: K, oMap: ObservableMap<K, V>) => void> = new Set();
     protected _onBeforeUpdate?: (newValue: V, oldValue: V, key: K, oMap: ObservableMap<K, V>) => V;
-    protected _value: Map<K, V>;
 
     /**
      * Map 中元素个数
@@ -18,24 +18,31 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
         return this._value.size;
     }
 
-    constructor(value: ObservableMap<K, V> | Map<K, V> | [K, V][], options?: ObservableVariableOptions) {
+    constructor(value: ObservableMap<K, V> | ReadonlyMap<K, V> | readonly [K, V][] = new Map(), options?: ObservableVariableOptions) {
         super(value as any, options);
-        if (this !== value && Array.isArray(value)) this._value = new Map(value);
+
+        if (this !== value) { // 确保不是重复包裹
+            if (Array.isArray(value))
+                this._value = new Map(value);
+        }
     }
 
-    toJSON(): any {
+    // @ts-expect-error
+    toJSON(): [K, V][] | undefined {
         return this._serializable ? [...this._value] : undefined;
     }
+
+    // #region 事件绑定
 
     /**
      * 当改变变量值的时候触发
      */
-    on(event: 'set', callback: (newValue: Map<K, V>, oldValue: Map<K, V>, oMap: this) => void): void;
+    on(event: 'set', callback: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => void): void;
     /**
      * 在变量值发生改变之前触发，返回一个新的值用于替换要设置的值
      * 注意：该回调只允许设置一个，重复设置将覆盖之前的回调。该回调不会受 ensureChange 的影响，只要用户设置变量值就会被触发
      */
-    on(event: 'beforeSet', callback: (newValue: Map<K, V>, oldValue: Map<K, V>, oMap: this) => Map<K, V>): void;
+    on(event: 'beforeSet', callback: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => ReadonlyMap<K, V>): void;
     /**
      * 当更新 Map 中某个元素的值时触发
      */
@@ -77,8 +84,8 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
         }
     }
 
-    once(event: 'set', callback: (newValue: Map<K, V>, oldValue: Map<K, V>, oMap: this) => void): void;
-    once(event: 'beforeSet', callback: (newValue: Map<K, V>, oldValue: Map<K, V>, oMap: this) => Map<K, V>): void;
+    once(event: 'set', callback: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => void): void;
+    once(event: 'beforeSet', callback: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => ReadonlyMap<K, V>): void;
     once(event: 'update', callback: (newValue: V, oldValue: V, key: K, oMap: this) => void): void;
     once(event: 'beforeUpdate', callback: (newValue: V, oldValue: V, key: K, oMap: this) => V): void;
     once(event: 'add', callback: (value: V, key: K, oMap: this) => void): void;
@@ -87,8 +94,8 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
         super.once(event, callback);
     }
 
-    off(event: 'set', callback?: (newValue: Map<K, V>, oldValue: Map<K, V>, oMap: this) => void): void;
-    off(event: 'beforeSet', callback?: (newValue: Map<K, V>, oldValue: Map<K, V>, oMap: this) => Map<K, V>): void;
+    off(event: 'set', callback?: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => void): void;
+    off(event: 'beforeSet', callback?: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => ReadonlyMap<K, V>): void;
     off(event: 'update', callback?: (newValue: V, oldValue: V, key: K, oMap: this) => void): void;
     off(event: 'beforeUpdate', callback?: (newValue: V, oldValue: V, key: K, oMap: this) => V): void;
     off(event: 'add', callback?: (value: V, key: K, oMap: this) => void): void;
@@ -117,6 +124,8 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
         }
     }
 
+    // #endregion
+
     // #region Map 修改操作方法
 
     /**
@@ -125,11 +134,11 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
     clear(): void {
         if (this._onDelete.size > 0) {
             for (const [key, value] of this._value) {
-                this._value.delete(key);
+                (this._value as Map<K, V>).delete(key);
                 for (const callback of this._onDelete) callback(value, key, this);
             }
         } else
-            this._value.clear();
+            (this._value as Map<K, V>).clear();
     }
 
     /**
@@ -139,13 +148,13 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
         if (this._onDelete.size > 0) {
             if (this._value.has(key)) {
                 const value = this._value.get(key)!;
-                this._value.delete(key);
+                (this._value as Map<K, V>).delete(key);
                 for (const callback of this._onDelete) callback(value, key, this);
                 return true;
             } else
                 return false;
         } else
-            return this._value.delete(key);
+            return (this._value as Map<K, V>).delete(key);
     }
 
     /**
@@ -157,10 +166,10 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
             if (this._onBeforeUpdate) value = this._onBeforeUpdate(value, oldValue, key, this);
             if (this._ensureChange && (this._deepCompare ? isDeepEqual(value, oldValue) : value === oldValue)) return this;
 
-            this._value.set(key, value);
+            (this._value as Map<K, V>).set(key, value);
             for (const callback of this._onUpdate) callback(value, oldValue, key, this);
         } else {
-            this._value.set(key, value);
+            (this._value as Map<K, V>).set(key, value);
             for (const callback of this._onAdd) callback(value, key, this);
         }
 
@@ -181,7 +190,7 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
     /**
      * 以插入顺序对 Map 中的每一个键值对执行一次参数中提供的回调函数
      */
-    forEach<H = undefined>(callback: (this: H, value: V, key: K, map: Map<K, V>) => void, thisArg?: H): void {
+    forEach<H>(callback: (this: H, value: V, key: K, map: ReadonlyMap<K, V>) => void, thisArg?: H): void {
         this._value.forEach(callback, thisArg);
     }
 
@@ -223,6 +232,6 @@ export class ObservableMap<K, V> extends ObservableVariable<Map<K, V>> {
     // #endregion
 }
 
-export function oMap<K, V>(value: ObservableMap<K, V> | Map<K, V> | [K, V][], options?: ObservableVariableOptions): ObservableMap<K, V> {
+export function oMap<K, V>(value?: ObservableMap<K, V> | ReadonlyMap<K, V> | readonly [K, V][], options?: ObservableVariableOptions): ObservableMap<K, V> {
     return new ObservableMap(value, options);
 }

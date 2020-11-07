@@ -1,44 +1,51 @@
-import { ObservableVariable, ObservableVariableOptions } from './ObservableVariable';
+import { ObservableVariable } from './ObservableVariable';
+import type { ObservableVariableOptions } from './ObservableVariable';
 
 /**
- * 可观察改变集合
+ * 可观察改变 Set
  */
-export class ObservableSet<T> extends ObservableVariable<Set<T>> {
+export class ObservableSet<T> extends ObservableVariable<ReadonlySet<T>> {
     protected readonly _onAdd: Set<(value: T, oSet: ObservableSet<T>) => void> = new Set();
     protected readonly _onDelete: Set<(value: T, oSet: ObservableSet<T>) => void> = new Set();
-    protected _value: Set<T>;
 
     /**
-     * 集合中元素个数
+     * Set 中元素个数
      */
     get size(): number {
         return this._value.size;
     }
 
-    constructor(value: ObservableSet<T> | Set<T> | T[], options?: ObservableVariableOptions) {
+    constructor(value: ObservableSet<T> | ReadonlySet<T> | readonly T[] = new Set(), options?: ObservableVariableOptions) {
         super(value as any, options);
-        if (this !== value && Array.isArray(value)) this._value = new Set(value);
+
+        if (this !== value) { // 确保不是重复包裹
+            if (Array.isArray(value))
+                this._value = new Set(value);
+        }
     }
 
-    toJSON(): any {
+    // @ts-expect-error
+    toJSON(): T[] | undefined {
         return this._serializable ? [...this._value] : undefined;
     }
+
+    // #region 事件绑定
 
     /**
      * 当改变变量值的时候触发
      */
-    on(event: 'set', callback: (newValue: Set<T>, oldValue: Set<T>, oSet: this) => void): void;
+    on(event: 'set', callback: (newValue: ReadonlySet<T>, oldValue: ReadonlySet<T>, oSet: this) => void): void;
     /**
      * 在变量值发生改变之前触发，返回一个新的值用于替换要设置的值
      * 注意：该回调只允许设置一个，重复设置将覆盖之前的回调。该回调不会受 ensureChange 的影响，只要用户设置值就会被触发
      */
-    on(event: 'beforeSet', callback: (newValue: Set<T>, oldValue: Set<T>, oSet: this) => Set<T>): void;
+    on(event: 'beforeSet', callback: (newValue: ReadonlySet<T>, oldValue: ReadonlySet<T>, oSet: this) => ReadonlySet<T>): void;
     /**
-     * 当向集合中添加元素时触发
+     * 当向 Set 中添加元素时触发
      */
     on(event: 'add', callback: (value: T, oSet: this) => void): void;
     /**
-     * 当删除集合中元素时触发
+     * 当删除 Set 中元素时触发
      */
     on(event: 'delete', callback: (value: T, oSet: this) => void): void;
     on(event: any, callback: any): void {
@@ -57,16 +64,16 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
         }
     }
 
-    once(event: 'set', callback: (newValue: Set<T>, oldValue: Set<T>, oSet: this) => void): void;
-    once(event: 'beforeSet', callback: (newValue: Set<T>, oldValue: Set<T>, oSet: this) => Set<T>): void;
+    once(event: 'set', callback: (newValue: ReadonlySet<T>, oldValue: ReadonlySet<T>, oSet: this) => void): void;
+    once(event: 'beforeSet', callback: (newValue: ReadonlySet<T>, oldValue: ReadonlySet<T>, oSet: this) => ReadonlySet<T>): void;
     once(event: 'add', callback: (value: T, oSet: this) => void): void;
     once(event: 'delete', callback: (value: T, oSet: this) => void): void;
     once(event: any, callback: any): void {
         super.once(event, callback);
     }
 
-    off(event: 'set', callback?: (newValue: Set<T>, oldValue: Set<T>, oSet: this) => void): void;
-    off(event: 'beforeSet', callback?: (newValue: Set<T>, oldValue: Set<T>, oSet: this) => Set<T>): void;
+    off(event: 'set', callback?: (newValue: ReadonlySet<T>, oldValue: ReadonlySet<T>, oSet: this) => void): void;
+    off(event: 'beforeSet', callback?: (newValue: ReadonlySet<T>, oldValue: ReadonlySet<T>, oSet: this) => ReadonlySet<T>): void;
     off(event: 'add', callback?: (value: T, oSet: this) => void): void;
     off(event: 'delete', callback?: (value: T, oSet: this) => void): void;
     off(event: any, callback: any): void {
@@ -85,7 +92,9 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
         }
     }
 
-    // #region 集合修改操作方法
+    // #endregion
+
+    // #region Set 修改操作方法
 
     /**
      * 清除 Set 中所有元素，清除成功将触发 delete 事件
@@ -93,11 +102,11 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
     clear(): void {
         if (this._onDelete.size > 0) {
             for (const item of this._value) {
-                this._value.delete(item);
+                (this._value as Set<T>).delete(item);
                 for (const callback of this._onDelete) callback(item, this);
             }
         } else
-            this._value.clear();
+            (this._value as Set<T>).clear();
     }
 
     /**
@@ -105,11 +114,11 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
      */
     delete(value: T): boolean {
         if (this._onDelete.size > 0) {
-            const result = this._value.delete(value);
+            const result = (this._value as Set<T>).delete(value);
             if (result) for (const callback of this._onDelete) callback(value, this);
             return result;
         } else
-            return this._value.delete(value);
+            return (this._value as Set<T>).delete(value);
     }
 
     /**
@@ -118,18 +127,18 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
     add(value: T): this {
         if (this._onAdd.size > 0) {
             if (!this._value.has(value)) {
-                this._value.add(value);
+                (this._value as Set<T>).add(value);
                 for (const callback of this._onAdd) callback(value, this);
             }
         } else
-            this._value.add(value);
+            (this._value as Set<T>).add(value);
 
         return this;
     }
 
     // #endregion
 
-    // #region 集合读取操作方法
+    // #region Set 读取操作方法
 
     /**
      * 返回一个包含 [value, value] 键值对的 Iterator 对象，返回的迭代器的迭代顺序与 Set 对象的插入顺序相同
@@ -139,9 +148,9 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
     }
 
     /**
-     * 根据集合中元素的顺序，对每个元素都执行提供的回调函数一次
+     * 根据 Set 中元素的顺序，对每个元素都执行提供的回调函数一次
      */
-    forEach<H = undefined>(callback: (this: H, value: T, value2: T, set: Set<T>) => void, thisArg?: H): void {
+    forEach<H>(callback: (this: H, value: T, value2: T, set: ReadonlySet<T>) => void, thisArg?: H): void {
         this._value.forEach(callback, thisArg);
     }
 
@@ -176,6 +185,6 @@ export class ObservableSet<T> extends ObservableVariable<Set<T>> {
     // #endregion
 }
 
-export function oSet<T>(value: ObservableSet<T> | Set<T> | T[], options?: ObservableVariableOptions): ObservableSet<T> {
+export function oSet<T>(value?: ObservableSet<T> | ReadonlySet<T> | readonly T[], options?: ObservableVariableOptions): ObservableSet<T> {
     return new ObservableSet(value, options);
 }

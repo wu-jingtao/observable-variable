@@ -35,7 +35,7 @@ export class ObservableVariable<T> {
     get value(): T {
         return this._value;
     }
-    
+
     set value(v: T) {
         if (this._onBeforeSet) v = this._onBeforeSet(v, this._value, this);
         if (this._ensureChange && (this._deepCompare ? isDeepEqual(v, this._value) : v === this._value)) return;
@@ -50,30 +50,30 @@ export class ObservableVariable<T> {
 
     /**
      * 注意：如果要继承 ObservableVariable，那么在子类的构造中
-     * 在执行 super() 之后一定要判断一下 if(this === value)
+     * 在执行 super() 之后一定要判断一下 if(this !== value)
      * 如果相等则说明是重复包裹，后面的代码则不应当执行
      * 
      * @param value 可观察变量初始值
      * @param options 可观察变量配置
      */
-    constructor(value: ObservableVariable<T> | T, options?: ObservableVariableOptions) {
+    constructor(value: ObservableVariable<T> | T, options: ObservableVariableOptions = {}) {
         if (value instanceof ObservableVariable) { // 确保不重复包裹变量
             /**
              * 如果造中使用了 return，那么不管是父类还是子类的原型都将不会附加到该对象上
              * 构造函数也就退化成了普通方法
              * 子类构造中的 this 等于 return 的返回值
              */
-            return value;
+            return value;  // eslint-disable-line
         }
 
-        const { serializable = true, ensureChange = true, deepCompare = false } = options || {};
+        const { serializable = true, ensureChange = true, deepCompare = false } = options;
         this._value = value;
         this._serializable = serializable;
         this._ensureChange = ensureChange;
         this._deepCompare = deepCompare;
     }
 
-    toJSON(): any {
+    toJSON(): T | undefined {
         return this._serializable ? this._value : undefined;
     }
 

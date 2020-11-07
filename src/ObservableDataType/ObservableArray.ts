@@ -1,5 +1,11 @@
 import isDeepEqual from 'lodash.isequal';
-import { ObservableVariable, ObservableVariableOptions } from './ObservableVariable';
+import { ObservableVariable } from './ObservableVariable';
+import type { ObservableVariableOptions } from './ObservableVariable';
+
+/**
+ * JS 数组的最大长度
+ */
+const JS_ARRAY_MAX_LENGTH = 2 ** 32 - 1;
 
 export interface ObservableArrayOptions extends ObservableVariableOptions {
     /**
@@ -11,18 +17,12 @@ export interface ObservableArrayOptions extends ObservableVariableOptions {
 /**
  * 可观察改变数组
  */
-export class ObservableArray<T> extends ObservableVariable<T[]> {
-    /**
-     * 数组的最大长度
-     */
-    static readonly ARRAY_MAX_LENGTH = 2 ** 32 - 1;
-
+export class ObservableArray<T> extends ObservableVariable<readonly T[]> {
     protected readonly _provideOnSetOldValue: boolean;
-    protected readonly _onAdd: Set<(value: T, oArr: ObservableArray<T>) => void> = new Set();
-    protected readonly _onDelete: Set<(value: T, oArr: ObservableArray<T>) => void> = new Set();
+    protected readonly _onAdd: Set<(value: T, index: number, oArr: ObservableArray<T>) => void> = new Set();
+    protected readonly _onDelete: Set<(value: T, index: number, oArr: ObservableArray<T>) => void> = new Set();
     protected readonly _onUpdate: Set<(newValue: T, oldValue: T, index: number, oArr: ObservableArray<T>) => void> = new Set();
     protected _onBeforeUpdate?: (newValue: T, oldValue: T, index: number, oArr: ObservableArray<T>) => T;
-    protected _value: T[];
 
     /**
      * 数组的长度
@@ -32,13 +32,20 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     }
 
     set length(v: number) {
-        if (v > ObservableArray.ARRAY_MAX_LENGTH || v < 0 || !Number.isInteger(v)) throw new RangeError('Invalid array length');
+        if (v > JS_ARRAY_MAX_LENGTH || v < 0 || !Number.isInteger(v)) throw new RangeError('Invalid array length');
 
-        if (v > this._value.length)
-            this.push(...new Array(v - this._value.length));
-        else if (v < this._value.length) {
+        if (v < this._value.length) {
             const number = this._value.length - v;
             this.splice(this._value.length - number, number);
+        } else {
+            /**
+             * this.push(...new Array(v - this._value.length));
+             * 
+             * 当 v > this._value.length 时没有用这种是因为：
+             *      1. JS 原生使用 empty 来填充空位，而我这样做用的是 undefined 来填充
+             *      2. 通过 length 来拉长数组严格上来说并不算是向数组中添加元素（与在超过数组长度的位置上设置值类似），所以不需要触发 onAdd 事件
+             */
+            (this._value as T[]).length = v;
         }
     }
 
@@ -56,20 +63,22 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
         return this._value[this._value.length - 1];
     }
 
-    constructor(value: ObservableArray<T> | T[], options: ObservableArrayOptions = {}) {
+    constructor(value: ObservableArray<T> | readonly T[] = [], options: ObservableArrayOptions = {}) {
         super(value, options);
-        if (this !== value) this._provideOnSetOldValue = !!options.provideOnSetOldValue;
+        if (this !== value) this._provideOnSetOldValue = options.provideOnSetOldValue ?? false;
     }
+
+    // #region 事件绑定
 
     /**
      * 当改变变量值的时候触发
      */
-    on(event: 'set', callback: (newValue: T[], oldValue: T[], oArr: this) => void): void;
+    on(event: 'set', callback: (newValue: readonly T[], oldValue: readonly T[], oArr: this) => void): void;
     /**
      * 在变量值发生改变之前触发，返回一个新的值用于替换要设置的值
      * 注意：该回调只允许设置一个，重复设置将覆盖之前的回调。该回调不会受 ensureChange 的影响，只要用户设置变量值就会被触发
      */
-    on(event: 'beforeSet', callback: (newValue: T[], oldValue: T[], oArr: this) => T[]): void;
+    on(event: 'beforeSet', callback: (newValue: readonly T[], oldValue: readonly T[], oArr: this) => readonly T[]): void;
     /**
      * 当更新数组中某个元素的值时触发
      */
@@ -82,11 +91,11 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     /**
      * 当向数组中添加元素时触发
      */
-    on(event: 'add', callback: (value: T, oArr: this) => void): void;
+    on(event: 'add', callback: (value: T, index: number, oArr: this) => void): void;
     /**
-     * 当删除数组中元素时触发
+     * 当删除数组中元素时触发。注意，index 指向的是元素被删除之前在数组中的位置
      */
-    on(event: 'delete', callback: (value: T, oArr: this) => void): void;
+    on(event: 'delete', callback: (value: T, index: number, oArr: this) => void): void;
     on(event: any, callback: any): void {
         switch (event) {
             case 'update':
@@ -111,22 +120,22 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
         }
     }
 
-    once(event: 'set', callback: (newValue: T[], oldValue: T[], oArr: this) => void): void;
-    once(event: 'beforeSet', callback: (newValue: T[], oldValue: T[], oArr: this) => T[]): void;
+    once(event: 'set', callback: (newValue: readonly T[], oldValue: readonly T[], oArr: this) => void): void;
+    once(event: 'beforeSet', callback: (newValue: readonly T[], oldValue: readonly T[], oArr: this) => readonly T[]): void;
     once(event: 'update', callback: (newValue: T, oldValue: T, index: number, oArr: this) => void): void;
     once(event: 'beforeUpdate', callback: (newValue: T, oldValue: T, index: number, oArr: this) => T): void;
-    once(event: 'add', callback: (value: T, oArr: this) => void): void;
-    once(event: 'delete', callback: (value: T, oArr: this) => void): void;
+    once(event: 'add', callback: (value: T, index: number, oArr: this) => void): void;
+    once(event: 'delete', callback: (value: T, index: number, oArr: this) => void): void;
     once(event: any, callback: any): void {
         super.once(event, callback);
     }
 
-    off(event: 'set', callback?: (newValue: T[], oldValue: T[], oArr: this) => void): void;
-    off(event: 'beforeSet', callback?: (newValue: T[], oldValue: T[], oArr: this) => T[]): void;
+    off(event: 'set', callback?: (newValue: readonly T[], oldValue: readonly T[], oArr: this) => void): void;
+    off(event: 'beforeSet', callback?: (newValue: readonly T[], oldValue: readonly T[], oArr: this) => readonly T[]): void;
     off(event: 'update', callback?: (newValue: T, oldValue: T, index: number, oArr: this) => void): void;
     off(event: 'beforeUpdate', callback?: (newValue: T, oldValue: T, index: number, oArr: this) => T): void;
-    off(event: 'add', callback?: (value: T, oArr: this) => void): void;
-    off(event: 'delete', callback?: (value: T, oArr: this) => void): void;
+    off(event: 'add', callback?: (value: T, index: number, oArr: this) => void): void;
+    off(event: 'delete', callback?: (value: T, index: number, oArr: this) => void): void;
     off(event: any, callback: any): void {
         switch (event) {
             case 'update':
@@ -151,38 +160,38 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
         }
     }
 
+    // #endregion
+
     // #region 数组修改操作方法
 
     /**
-     * 改变数组指定位置上的值。注意：当 index 大于或等于数组长度时将触发 add 事件，当小于数组长度时将触发 update 和 beforeUpdate 事件
+     * 为数组添加或更新一个元素，添加成功将触发 add 事件，更新将触发 beforeUpdate 和 update 事件
      */
     set(index: number, value: T): this {
-        if (index === this._value.length)
-            this.push(value);
-        else if (index > this.value.length) {
-            this.length = index;
-            this.push(value);
-        } else {
+        if (index in this._value) {
             const oldValue = this._value[index];
             if (this._onBeforeUpdate) value = this._onBeforeUpdate(value, oldValue, index, this);
             if (this._ensureChange && (this._deepCompare ? isDeepEqual(value, oldValue) : value === oldValue)) return this;
 
-            this._value[index] = value;
+            (this._value as T[])[index] = value;
             for (const callback of this._onUpdate) callback(value, oldValue, index, this);
+        } else {
+            (this._value as T[])[index] = value;
+            for (const callback of this._onAdd) callback(value, index, this);
         }
 
         return this;
     }
 
     /**
-     * 删除数组中第一个与之匹配的元素，返回一个布尔值表示删除是否成功，删除成功将触发 delete 事件
+     * 删除数组中第一个与之匹配的元素，返回一个布尔值表示删除是否成功，删除成功将会使得数组长度 -1 同时触发 delete 事件
      */
     delete(value: T): boolean {
         const index = this._value.indexOf(value);
 
         if (index !== -1) {
-            this._value.splice(index, 1);
-            for (const callback of this._onDelete) callback(value, this);
+            (this._value as T[]).splice(index, 1);
+            for (const callback of this._onDelete) callback(value, index, this);
             return true;
         } else
             return false;
@@ -192,9 +201,9 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      * 删除数组中所有与之匹配的元素，返回被删除元素的个数，删除成功将触发 delete 事件
      */
     deleteAll(value: T): number {
-        let index = 0;
-        while (this.delete(value)) index++;
-        return index;
+        let amount = 0;
+        while (this.delete(value)) amount++;
+        return amount;
     }
 
     /**
@@ -202,8 +211,8 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      */
     pop(): T | undefined {
         if (this._value.length > 0) {
-            const value = this._value.pop()!;
-            for (const callback of this._onDelete) callback(value, this);
+            const value = (this._value as T[]).pop()!;
+            for (const callback of this._onDelete) callback(value, this._value.length, this);
             return value;
         }
     }
@@ -214,12 +223,12 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     push(...items: T[]): number {
         if (this._onAdd.size > 0) {
             for (const item of items) {
-                this._value.push(item);
-                for (const callback of this._onAdd) callback(item, this);
+                (this._value as T[]).push(item);
+                for (const callback of this._onAdd) callback(item, this._value.length - 1, this);
             }
             return this._value.length;
         } else
-            return this._value.push(...items);
+            return (this._value as T[]).push(...items);
     }
 
     /**
@@ -227,8 +236,8 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
      */
     shift(): T | undefined {
         if (this._value.length > 0) {
-            const value = this._value.shift()!;
-            for (const callback of this._onDelete) callback(value, this);
+            const value = (this._value as T[]).shift()!;
+            for (const callback of this._onDelete) callback(value, 0, this);
             return value;
         }
     }
@@ -239,12 +248,12 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     unshift(...items: T[]): number {
         if (this._onAdd.size > 0) {
             for (let index = 0; index < items.length; index++) {
-                this._value.splice(index, 0, items[index]);
-                for (const callback of this._onAdd) callback(items[index], this);
+                (this._value as T[]).splice(index, 0, items[index]);
+                for (const callback of this._onAdd) callback(items[index], 0, this);
             }
             return this._value.length;
         } else
-            return this._value.unshift(...items);
+            return (this._value as T[]).unshift(...items);
     }
 
     /**
@@ -269,32 +278,38 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
             start = start < 0 ? Math.max(this._value.length + start, 0) : Math.min(start, this._value.length);
 
             if (this._onDelete.size > 0) {
-                deleteCount = deleteCount === undefined ?
-                    this._value.length - start : deleteCount < 0 ?
-                        0 : Math.min(Math.trunc(deleteCount), this._value.length - start);
+                deleteCount = deleteCount === undefined ? this._value.length - start :
+                    deleteCount < 0 ? 0 : Math.min(Math.trunc(deleteCount), this._value.length - start);
 
-                for (let index = deleteCount - 1; index >= 0; index--) {
-                    const value = this._value.splice(start + index, 1)[0];
-                    for (const callback of this._onDelete) callback(value, this);
-                    deletedElements.push(value);
+                for (let i = deleteCount - 1; i >= 0; i--) {
+                    const index = start + i;
+
+                    if (index in this._value) { // 确保要删除的元素不是空位
+                        const value = (this._value as T[]).splice(index, 1)[0];
+                        for (const callback of this._onDelete) callback(value, index, this);
+                        deletedElements.push(value);
+                    } else {
+                        (this._value as T[]).splice(index, 1);
+                        deletedElements.length++;
+                    }
                 }
 
-                // 没有使用 unshift 是出于性能的考虑
-                deletedElements.reverse();
+                deletedElements.reverse(); // 没有使用 unshift 是出于性能的考虑
             } else
-                deletedElements = this._value.splice(start, deleteCount);
+                deletedElements = (this._value as T[]).splice(start, deleteCount);
 
             if (this._onAdd.size > 0) {
-                for (let index = 0; index < items.length; index++) {
-                    this._value.splice(start + index, 0, items[index]);
-                    for (const callback of this._onAdd) callback(items[index], this);
+                for (let i = 0; i < items.length; i++) {
+                    const index = start + i;
+                    (this._value as T[]).splice(index, 0, items[i]);
+                    for (const callback of this._onAdd) callback(items[i], index, this);
                 }
             } else
-                this._value.splice(start, 0, ...items);
+                (this._value as T[]).splice(start, 0, ...items);
 
             return deletedElements;
         } else
-            return this._value.splice(start, deleteCount!, ...items);
+            return (this._value as T[]).splice(start, deleteCount!, ...items);
     }
 
     /**
@@ -304,10 +319,10 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     sort(compare?: (a: T, b: T) => number): this {
         if (this._onSet.size > 0) {
             const oldValue = this._provideOnSetOldValue ? this._value.slice() : this._value;
-            this._value.sort(compare);
+            (this._value as T[]).sort(compare);
             for (const callback of this._onSet) callback(this._value, oldValue, this);
         } else
-            this._value.sort(compare);
+            (this._value as T[]).sort(compare);
 
         return this;
     }
@@ -319,44 +334,55 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     reverse(): this {
         if (this._onSet.size > 0) {
             const oldValue = this._provideOnSetOldValue ? this._value.slice() : this._value;
-            this._value.reverse();
+            (this._value as T[]).reverse();
             for (const callback of this._onSet) callback(this._value, oldValue, this);
         } else
-            this._value.reverse();
+            (this._value as T[]).reverse();
 
         return this;
     }
 
     /**
-     * 将数组中指定部分的值填充为指定值，填充完成之后将触发 update 事件，不会触发 beforeUpdate 事件
+     * 将数组中指定部分填充为指定值。如果填充位有值则触发 update 事件，但不会触发 beforeUpdate 事件，如果填充位没有值则触发 add 事件
      * @param value 要填充的值
      * @param start 开始位置
      * @param end 结束位置
      */
     fill(value: T, start?: number, end?: number): this {
-        if (this._onUpdate.size > 0) {
+        if (this._onAdd.size > 0 || this._onUpdate.size > 0) {
             start = start === undefined ? 0 : Math.trunc(start);
             end = end === undefined ? this._value.length : Math.trunc(end);
             start = start < 0 ? Math.max(0, this._value.length + start) : Math.min(this._value.length, start);
             end = end < 0 ? Math.max(0, this._value.length + end) : Math.min(this._value.length, end);
 
             for (; start < end; start++) {
-                const oldValue = this._value[start];
-                this._value[start] = value;
-                if (this._ensureChange && (this._deepCompare ? isDeepEqual(value, oldValue) : value === oldValue)) continue;
-                for (const callback of this._onUpdate) callback(value, oldValue, start, this);
+                if (start in this._value) {
+                    if (this._onUpdate.size > 0) {
+                        const oldValue = this._value[start];
+                        (this._value as T[])[start] = value;
+                        if (this._ensureChange && (this._deepCompare ? isDeepEqual(value, oldValue) : value === oldValue)) continue;
+                        for (const callback of this._onUpdate) callback(value, oldValue, start, this);
+                    } else
+                        (this._value as T[])[start] = value;
+                } else {
+                    (this._value as T[])[start] = value;
+                    for (const callback of this._onAdd) callback(value, start, this);
+                }
             }
         } else
-            this._value.fill(value, start, end);
+            (this._value as T[]).fill(value, start, end);
 
         return this;
     }
 
     /**
-     * 浅复制数组的一部分到同一数组中的另一个位置，复制完成之后将触发 update 事件，不会触发 beforeUpdate 事件
+     * 浅复制数组的一部分到同一数组中的另一个位置。根据粘贴内容和位置会触发以下几种事件  
+     *      1. 粘贴一个值到一个已经有值的位置则触发 update 事件，但不会触发 beforeUpdate 事件
+     *      2. 粘贴一个空位到一个已经有值的位置则触发 delete 事件
+     *      3. 粘贴一个值到一个空位则触发 add 事件
      */
     copyWithin(target: number, start: number, end?: number): this {
-        if (this._onUpdate.size > 0) {
+        if (this._onAdd.size > 0 || this._onUpdate.size > 0 || this._onDelete.size > 0) {
             target = Math.trunc(target);
             start = Math.trunc(start);
             end = end === undefined ? this._value.length : Math.trunc(end);
@@ -366,14 +392,25 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
 
             const replace = this._value.slice(start, end);
 
-            for (let index = 0; target < this._value.length && index < replace.length; index += 1, target++) {
-                const oldValue = this._value[target];
-                const newValue = this._value[target] = replace[index];
-                if (this._ensureChange && (this._deepCompare ? isDeepEqual(newValue, oldValue) : newValue === oldValue)) continue;
-                for (const callback of this._onUpdate) callback(newValue, oldValue, target, this);
+            for (let index = 0; target < this._value.length && index < replace.length; index++, target++) {
+                if (index in replace) { // 复制的不是空位
+                    if (target in this._value) { // 插入的位置不是空位
+                        const oldValue = this._value[target];
+                        const newValue = (this._value as T[])[target] = replace[index];
+                        if (this._ensureChange && (this._deepCompare ? isDeepEqual(newValue, oldValue) : newValue === oldValue)) continue;
+                        for (const callback of this._onUpdate) callback(newValue, oldValue, target, this);
+                    } else {
+                        const newValue = (this._value as T[])[target] = replace[index];
+                        for (const callback of this._onAdd) callback(newValue, target, this);
+                    }
+                } else if (target in this._value) {
+                    const oldValue = this._value[target];
+                    delete (this._value as T[])[target];  // eslint-disable-line
+                    for (const callback of this._onDelete) callback(oldValue, target, this);
+                }
             }
         } else
-            this._value.copyWithin(target, start, end);
+            (this._value as T[]).copyWithin(target, start, end);
 
         return this;
     }
@@ -390,7 +427,7 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     }
 
     /**
-     * 判读数组某个位置上是否有值
+     * 判读数组某个位置上是否有值。注意这个判断的是是不是空位而不是 null 或 undefined
      */
     has(index: number): boolean {
         return index in this._value;
@@ -399,7 +436,7 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     /**
      * 用于合并两个或多个数组，此方法不会更改现有数组，而是返回一个新数组
      */
-    concat(...items: ConcatArray<T>[]): T[] {
+    concat(...items: (T | ConcatArray<T>)[]): T[] {
         return this._value.concat(...items);
     }
 
@@ -413,50 +450,50 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     /**
      * 测试数组的所有元素是否都通过了指定函数的测试
      */
-    every<H = undefined>(callback: (this: H, value: T, index: number, array: T[]) => unknown, thisArg?: H): boolean {
-        return this._value.every(callback, thisArg);  // eslint-disable-line
+    every<H>(predicate: (this: H, value: T, index: number, array: readonly T[]) => unknown, thisArg?: H): boolean {
+        return this._value.every(predicate, thisArg);  // eslint-disable-line
     }
 
     /**
      * 创建一个新数组, 其包含通过所提供函数实现的测试的所有元素
      */
-    filter<H = undefined>(callback: (this: H, value: T, index: number, array: T[]) => unknown, thisArg?: H): T[] {
+    filter<H>(callback: (this: H, value: T, index: number, array: readonly T[]) => unknown, thisArg?: H): T[] {
         return this._value.filter(callback, thisArg); // eslint-disable-line
     }
 
     /**
      * 返回数组中满足提供的测试函数的第一个元素的值，否则返回 undefined
      */
-    find<H = undefined>(callback: (this: H, value: T, index: number, array: T[]) => unknown, thisArg?: H): T | undefined {
-        return this._value.find(callback, thisArg); // eslint-disable-line
+    find<H>(predicate: (this: H, value: T, index: number, array: readonly T[]) => unknown, thisArg?: H): T | undefined {
+        return this._value.find(predicate, thisArg); // eslint-disable-line
     }
 
     /**
      * 返回数组中满足提供的测试函数的第一个元素的索引，否则返回 -1
      */
-    findIndex<H = undefined>(callback: (this: H, value: T, index: number, array: T[]) => unknown, thisArg?: H): number {
-        return this._value.findIndex(callback, thisArg);
+    findIndex<H>(predicate: (this: H, value: T, index: number, array: readonly T[]) => unknown, thisArg?: H): number {
+        return this._value.findIndex(predicate, thisArg);
     }
 
     /**
      * 扁平化数组，返回一个新的数组来保存扁平化后的结果
      * @param depth 要扁平化的深度，默认1
      */
-    flat<D extends number = 1>(depth?: D): FlatArray<T[], D>[] {
+    flat<D extends number = 1>(depth?: D): FlatArray<readonly T[], D>[] {
         return this._value.flat(depth);
     }
 
     /**
      * 类似于 map 方法，只不过对于 map 方法返回的结果执行了一次 flat 方法（效果相当于多返回值 map 方法）
      */
-    flatMap<U, H = undefined>(callback: (this: H, value: T, index: number, array: T[]) => U | U[], thisArg?: H): U[] {
+    flatMap<U, H>(callback: (this: H, value: T, index: number, array: T[]) => U | U[], thisArg?: H): U[] {
         return this._value.flatMap(callback, thisArg);
     }
 
     /**
      * 对数组的每个元素执行一次提供的函数
      */
-    forEach<H = undefined>(callback: (this: H, value: T, index: number, array: T[]) => void, thisArg?: H): void {
+    forEach<H>(callback: (this: H, value: T, index: number, array: readonly T[]) => void, thisArg?: H): void {
         this._value.forEach(callback, thisArg);
     }
 
@@ -498,7 +535,7 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     /**
      * 创建一个新数组，其结果是该数组中的每个元素都调用一个提供的函数后返回的结果
      */
-    map<U, H = undefined>(callback: (this: H, value: T, index: number, array: T[]) => U, thisArg?: H): U[] {
+    map<U, H>(callback: (this: H, value: T, index: number, array: readonly T[]) => U, thisArg?: H): U[] {
         return this._value.map(callback, thisArg);
     }
 
@@ -532,8 +569,8 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     /**
      * 测试数组中的某些元素是否通过由提供的函数实现的测试
      */
-    some<H = undefined>(callback: (this: H, value: T, index: number, array: T[]) => unknown, thisArg?: H): boolean {
-        return this._value.some(callback, thisArg);  // eslint-disable-line
+    some<H>(predicate: (this: H, value: T, index: number, array: readonly T[]) => unknown, thisArg?: H): boolean {
+        return this._value.some(predicate, thisArg);  // eslint-disable-line
     }
 
     /**
@@ -567,6 +604,6 @@ export class ObservableArray<T> extends ObservableVariable<T[]> {
     // #endregion
 }
 
-export function oArr<T>(value: ObservableArray<T> | T[], options?: ObservableArrayOptions): ObservableArray<T> {
+export function oArr<T>(value?: ObservableArray<T> | T[], options?: ObservableArrayOptions): ObservableArray<T> {
     return new ObservableArray(value, options);
 }

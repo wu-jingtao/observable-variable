@@ -1,4 +1,4 @@
-import { ObservableVariable } from '../ObservableDataType/ObservableVariable';
+import type { ObservableVariable } from '../ObservableDataType/ObservableVariable';
 
 /**
  * 观察一个或多个变量的变化，监听 set、add、delete、update 事件   

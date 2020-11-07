@@ -1,125 +1,52 @@
 import _ from 'lodash';
 import expect from 'expect.js';
-import { oVar, oArr, oMap, oSet, watch, ObservableArray } from '../src';
+import { oVar, oArr, oMap, oSet, watch } from '../src';
+import type { ObservableArray } from '../src';
 
-describe('测试 创建可观察变量', function () {
-    it('测试 ObservableVariable', function () {
-        const o1 = 'test1';
-        const o2 = 'test2';
-
-        const i1 = oVar(o1);
-        expect(i1.value).to.be(o1);
-        expect((i1 as any)._serializable).to.be(true);
-        expect((i1 as any)._ensureChange).to.be(true);
-        expect((i1 as any)._deepCompare).to.be(false);
-
-        const i2 = oVar(o2, { serializable: false, ensureChange: false, deepCompare: true });
-        const i3 = oVar(i2, { serializable: true, ensureChange: true, deepCompare: false });
-        expect(i2).to.be(i3);
-        expect(i3.value).to.be(o2);
-        expect((i2 as any)._ensureChange).to.be(false);
-        expect((i2 as any)._ensureChange).to.be(false);
-        expect((i2 as any)._deepCompare).to.be(true);
-        expect((i3 as any)._serializable).to.be(false);
-        expect((i3 as any)._ensureChange).to.be(false);
-        expect((i3 as any)._deepCompare).to.be(true);
-    });
-
-    it('测试 ObservableArray', function () {
-        const o1 = ['test'];
-        const o2 = ['test2'];
-
-        const i1 = oArr(o1);
-        expect(i1.value).to.be(o1);
-        expect([...i1]).to.be.eql(o1);
-        expect((i1 as any)._serializable).to.be(true);
-        expect((i1 as any)._ensureChange).to.be(true);
-        expect((i1 as any)._deepCompare).to.be(false);
-        expect((i1 as any)._provideOnSetOldValue).to.be(false);
-
-        const i2 = oArr(o2, { serializable: false, ensureChange: false, deepCompare: true, provideOnSetOldValue: true });
-        expect(i2.value).to.be(o2);
-        expect((i2 as any)._serializable).to.be(false);
-        expect((i2 as any)._ensureChange).to.be(false);
-        expect((i2 as any)._deepCompare).to.be(true);
-        expect((i2 as any)._provideOnSetOldValue).to.be(true);
-    });
-
-    it('测试ObservableMap', function () {
-        const o1 = [['key', 'value']] as [string, string][];
-        const o2 = new Map<number, string>();
-
-        const i1 = oMap(o1);
-        const i2 = oMap(o2);
-        expect(i1.value).to.be.a(Map);
-        expect(i2.value).to.be.a(Map);
-        expect([...i1]).to.be.eql([['key', 'value']]);
-        expect([...i1.value.entries()]).to.be.eql([['key', 'value']]);
-        expect(i2.value).to.be(o2);
-    });
-
-    it('测试ObservableSet', function () {
-        const o1 = [['test1', 'test2']];
-        const o2 = new Set<string>();
-
-        const i1 = oSet(o1);
-        const i2 = oSet(o2);
-        expect(i1.value).to.be.a(Set);
-        expect(i2.value).to.be.a(Set);
-        expect([...i1]).to.be.eql([['test1', 'test2']]);
-        expect([...i1.values()]).to.be.eql([['test1', 'test2']]);
-        expect(i2.value).to.be(o2);
-    });
-});
-
-describe('测试 序列化', function () {
-    it('测试 可序列化', function () {
-        const testData = {
-            ov: oVar('ov'),
-            oa: oArr(['oa']),
-            om: oMap([['om', 123], ['om', 456]]),
-            os: oSet(['os', 'os'])
-        };
-
-        expect(JSON.stringify(testData)).to.be('{"ov":"ov","oa":["oa"],"om":[["om",456]],"os":["os"]}');
-    });
-
-    it('测试 不可序列化', function () {
-        const testData = {
-            ov: oVar('ov', { serializable: false }),
-            oa: oArr(['oa'], { serializable: false }),
-            om: oMap([['om', 123], ['om', 456]], { serializable: false }),
-            os: oSet(['os', 'os'], { serializable: false })
-        };
-
-        expect(JSON.stringify(testData)).to.be('{}');
-    });
-});
-
-it('测试 元素个数属性', function () {
-    const oa = oArr(['oa', 'oa']);
-    const om = oMap([['om', 123], ['om', 456]]);
-    const os = oSet(['os', 'os']);
-
-    expect(oa.length).to.be(2);
-    expect(om.size).to.be(1);
-    expect(os.size).to.be(1);
-});
-
-it('测试 ObservableArray first与last属性', function () {
-    const oa = oArr([1, 2, 3]);
-    expect(oa.first).to.be(1);
-    expect(oa.last).to.be(3);
-});
-
-describe('测试 事件', function () {
+describe('测试 ObservableVariable', function () {
     const testResult: any[] = [];
 
     afterEach(function () {
         testResult.length = 0;
     });
 
-    describe('测试 ObservableVariable', function () {
+    it('测试创建 ObservableVariable', function () {
+        const testData = ['test'];
+        const variable = oVar(testData);
+
+        expect(variable.value).to.be(testData);
+
+        // @ts-expect-error
+        expect(variable._serializable).to.be(true);
+        // @ts-expect-error
+        expect(variable._ensureChange).to.be(true);
+        // @ts-expect-error
+        expect(variable._deepCompare).to.be(false);
+    });
+
+    it('测试重复创建 ObservableVariable', function () {
+        const testData = ['test'];
+        const variable1 = oVar(testData, { serializable: false, ensureChange: false, deepCompare: true });
+        const variable2 = oVar(variable1, { serializable: true, ensureChange: true, deepCompare: false });
+
+        expect(variable1).to.be(variable2);
+        expect(variable2.value).to.be(testData);
+
+        // @ts-expect-error
+        expect(variable1._ensureChange).to.be(false);
+        // @ts-expect-error
+        expect(variable1._ensureChange).to.be(false);
+        // @ts-expect-error
+        expect(variable1._deepCompare).to.be(true);
+        // @ts-expect-error
+        expect(variable2._serializable).to.be(false);
+        // @ts-expect-error
+        expect(variable2._ensureChange).to.be(false);
+        // @ts-expect-error
+        expect(variable2._deepCompare).to.be(true);
+    });
+
+    describe('测试 事件绑定', function () {
         it('测试 set', function () {
             const o1 = oVar('a');
             const o2 = oVar(['a']);
@@ -191,86 +118,60 @@ describe('测试 事件', function () {
         });
     });
 
-    describe('测试 ObservableArray', function () {
-        it('测试 add', function () {
-            const o1 = oArr([1]);
+    it('测试 toJSON', function () {
+        const testData1 = { ov: oVar('ov') };
+        const testData2 = { ov: oVar('ov', { serializable: false }) };
 
-            o1.on('add', (...args: any[]) => testResult.push(...args));
-            o1.once('add', (...args: any[]) => testResult.push(...args));
+        expect(JSON.stringify(testData1)).to.be('{"ov":"ov"}');
+        expect(JSON.stringify(testData2)).to.be('{}');
+    });
+});
 
-            o1.push(2, 3);
+describe('测试 ObservableSet', function () {
+    const testResult: any[] = [];
 
-            expect(testResult).to.eql([2, o1, 2, o1, 3, o1]);
-        });
-
-        it('测试 delete', function () {
-            const o1 = oArr([1, 2, 3]);
-
-            o1.on('delete', (...args: any[]) => testResult.push(...args));
-            o1.once('delete', (...args: any[]) => testResult.push(...args));
-
-            o1.length = 1;
-
-            expect(testResult).to.eql([3, o1, 3, o1, 2, o1]);
-        });
-
-        it('测试 update', function () {
-            const o1 = oArr([1, 2, 3]);
-            const o2 = oArr([1, 2, 3], { ensureChange: false });
-            const o3 = oArr([[1], [2], [3]], { deepCompare: true });
-
-            function callback(...args: any[]): void { testResult.push(...args) }
-
-            o1.on('update', callback);
-            o1.once('update', callback);
-            o2.on('update', callback);
-            o2.once('update', callback);
-            o3.on('update', callback);
-            o3.once('update', callback);
-
-            o1.set(0, 1);
-            o1.set(1, 1);
-            o1.set(2, 2);
-            o2.set(0, 1);
-            o2.set(1, 1);
-            o2.set(2, 2);
-            o3.set(0, [1]);
-            o3.set(1, [1]);
-            o3.set(2, [2]);
-
-            expect(testResult).to.eql([
-                1, 2, 1, o1, 1, 2, 1, o1,
-                2, 3, 2, o1,
-                1, 1, 0, o2, 1, 1, 0, o2,
-                1, 2, 1, o2,
-                2, 3, 2, o2,
-                [1], [2], 1, o3, [1], [2], 1, o3,
-                [2], [3], 2, o3
-            ]);
-        });
-
-        it('测试 beforeUpdate', function () {
-            const o1 = oArr([1, 2, 3]);
-
-            o1.on('update', (...args: any[]) => testResult.push('update', ...args));
-            o1.on('beforeUpdate', (...args: any[]) => { testResult.push('beforeUpdate', ...args); return args[0] });
-
-            o1.set(0, 1);
-            o1.set(1, 1);
-
-            o1.on('beforeUpdate', (...args: any[]) => { testResult.push('beforeUpdate2', ...args); return args[1] });
-
-            o1.set(2, 2);
-
-            expect(testResult).to.eql([
-                'beforeUpdate', 1, 1, 0, o1,
-                'beforeUpdate', 1, 2, 1, o1, 'update', 1, 2, 1, o1,
-                'beforeUpdate2', 2, 3, 2, o1
-            ]);
-        });
+    afterEach(function () {
+        testResult.length = 0;
     });
 
-    describe('测试 ObservableSet', function () {
+    it('测试创建 ObservableSet', function () {
+        const testData = ['test1', 'test2'];
+        const variable = oSet(testData);
+
+        expect(variable.value).to.be.a(Set);
+        expect([...variable.value]).to.eql(testData);
+
+        // @ts-expect-error
+        expect(variable._serializable).to.be(true);
+        // @ts-expect-error
+        expect(variable._ensureChange).to.be(true);
+        // @ts-expect-error
+        expect(variable._deepCompare).to.be(false);
+    });
+
+    it('测试重复创建 ObservableSet', function () {
+        const testData = ['test1', 'test2'];
+        const variable1 = oSet(testData, { serializable: false, ensureChange: false, deepCompare: true });
+        const variable2 = oSet(variable1, { serializable: true, ensureChange: true, deepCompare: false });
+
+        expect(variable1).to.be(variable2);
+        expect([...variable2.value]).to.eql(testData);
+
+        // @ts-expect-error
+        expect(variable1._ensureChange).to.be(false);
+        // @ts-expect-error
+        expect(variable1._ensureChange).to.be(false);
+        // @ts-expect-error
+        expect(variable1._deepCompare).to.be(true);
+        // @ts-expect-error
+        expect(variable2._serializable).to.be(false);
+        // @ts-expect-error
+        expect(variable2._ensureChange).to.be(false);
+        // @ts-expect-error
+        expect(variable2._deepCompare).to.be(true);
+    });
+
+    describe('测试 事件绑定', function () {
         it('测试 add', function () {
             const o1 = oSet([1]);
 
@@ -296,7 +197,139 @@ describe('测试 事件', function () {
         });
     });
 
-    describe('测试 ObservableMap', function () {
+    it('测试 size属性', function () {
+        const os = oSet(['os', 'os']);
+
+        expect(os.size).to.be(1);
+    });
+
+    it('测试 toJSON', function () {
+        const testData1 = { os: oSet(['os', 'os']) };
+        const testData2 = { os: oSet(['os', 'os'], { serializable: false }) };
+
+        expect(JSON.stringify(testData1)).to.be('{"os":["os"]}');
+        expect(JSON.stringify(testData2)).to.be('{}');
+    });
+
+    describe('测试 修改操作方法', function () {
+        it('测试 clear', function () {
+            const obj = oSet([1, 2]);
+            obj.on('delete', value => testResult.push(value));
+
+            obj.clear();
+
+            expect(obj.value.size).to.be(0);
+            expect(testResult).to.eql([1, 2]);
+        });
+
+        it('测试 delete', function () {
+            const obj = oSet([1]);
+            obj.on('delete', value => testResult.push(value));
+
+            expect(obj.delete(1)).to.be(true);
+            expect(obj.delete(1)).to.be(false);
+            expect(obj.delete(2)).to.be(false);
+
+            expect(obj.value.size).to.be(0);
+            expect(testResult).to.eql([1]);
+        });
+
+        it('测试 add', function () {
+            const obj = oSet([1]);
+            obj.on('add', value => testResult.push(value));
+
+            expect(obj.add(1)).to.be(obj);
+            expect(obj.add(2)).to.be(obj);
+
+            expect(obj.value.size).to.be(2);
+            expect(testResult).to.eql([2]);
+        });
+    });
+
+    describe('测试 读取操作方法', function () {
+        const testData = ['test1', 'test2'];
+        const variable = oSet(testData);
+
+        it('测试 entries', function () {
+            expect(variable.entries()).to.eql(variable.value.entries());
+        });
+
+        it('测试 forEach', function () {
+            const testResult: any[] = [];
+            const testResult2: any[] = [];
+            const _this = Symbol('this');
+
+            variable.forEach(function (value, value2, set) { testResult.push(value, value2, set, this) }, _this);
+            variable.value.forEach(function (this: Object, value, value2, set) { testResult2.push(value, value2, set, this) }, _this);
+
+            expect(testResult).to.eql(testResult2);
+        });
+
+        it('测试 has', function () {
+            expect(variable.has('test1')).to.be(variable.value.has('test1'));
+            expect(variable.has('test2')).to.be(variable.value.has('test2'));
+            expect(variable.has('test3')).to.be(variable.value.has('test3'));
+        });
+
+        it('测试 keys', function () {
+            expect(variable.keys()).to.eql(variable.value.keys());
+        });
+
+        it('测试 values', function () {
+            expect(variable.values()).to.eql(variable.value.values());
+        });
+
+        it('测试 [Symbol.iterator]', function () {
+            expect([...variable]).to.eql([...variable.value]);
+        });
+    });
+});
+
+describe('测试 ObservableMap', function () {
+    const testResult: any[] = [];
+
+    afterEach(function () {
+        testResult.length = 0;
+    });
+
+    it('测试创建 ObservableMap', function () {
+        const testData = [['key', 123]] as [string, number][];
+        const variable = oMap(testData);
+
+        expect(variable.value).to.be.a(Map);
+        expect([...variable.value]).to.eql(testData);
+
+        // @ts-expect-error
+        expect(variable._serializable).to.be(true);
+        // @ts-expect-error
+        expect(variable._ensureChange).to.be(true);
+        // @ts-expect-error
+        expect(variable._deepCompare).to.be(false);
+    });
+
+    it('测试重复创建 ObservableMap', function () {
+        const testData = [['key', 123]] as [string, number][];
+        const variable1 = oMap(testData, { serializable: false, ensureChange: false, deepCompare: true });
+        const variable2 = oMap(variable1, { serializable: true, ensureChange: true, deepCompare: false });
+
+        expect(variable1).to.be(variable2);
+        expect([...variable2.value]).to.eql(testData);
+
+        // @ts-expect-error
+        expect(variable1._ensureChange).to.be(false);
+        // @ts-expect-error
+        expect(variable1._ensureChange).to.be(false);
+        // @ts-expect-error
+        expect(variable1._deepCompare).to.be(true);
+        // @ts-expect-error
+        expect(variable2._serializable).to.be(false);
+        // @ts-expect-error
+        expect(variable2._ensureChange).to.be(false);
+        // @ts-expect-error
+        expect(variable2._deepCompare).to.be(true);
+    });
+
+    describe('测试 事件绑定', function () {
         it('测试 add', function () {
             const o1 = oMap([]);
 
@@ -376,454 +409,844 @@ describe('测试 事件', function () {
             ]);
         });
     });
+
+    it('测试 toJSON', function () {
+        const testData1 = { om: oMap([['om', 123], ['om', 456]]) };
+        const testData2 = { om: oMap([['om', 123], ['om', 456]], { serializable: false }) };
+
+        expect(JSON.stringify(testData1)).to.be('{"om":[["om",456]]}');
+        expect(JSON.stringify(testData2)).to.be('{}');
+    });
+
+    it('测试 size属性', function () {
+        const om = oMap([['om', 123], ['om', 456]]);
+
+        expect(om.size).to.be(1);
+    });
+
+    describe('测试 修改操作方法', function () {
+        it('测试 clear', function () {
+            const obj = oMap([['a', 1], ['b', 2]]);
+            obj.on('delete', (value, key) => testResult.push(key, value));
+
+            obj.clear();
+
+            expect(obj.value.size).to.be(0);
+            expect(testResult).to.eql(['a', 1, 'b', 2]);
+        });
+
+        it('测试 delete', function () {
+            const obj = oMap([['a', 1]]);
+            obj.on('delete', (value, key) => testResult.push(key, value));
+
+            expect(obj.delete('a')).to.be(true);
+            expect(obj.delete('a')).to.be(false);
+            expect(obj.delete('b')).to.be(false);
+
+            expect(obj.value.size).to.be(0);
+            expect(testResult).to.eql(['a', 1]);
+        });
+
+        it('测试 set', function () {
+            const obj = oMap([['a', 1]]);
+            obj.on('add', (value, key) => testResult.push('add', key, value));
+            obj.on('update', (newValue, oldValue, key) => testResult.push('update', key, newValue, oldValue));
+            obj.on('beforeUpdate', (newValue, oldValue, key) => { testResult.push('beforeUpdate', key, newValue, oldValue); return newValue });
+
+            expect(obj.set('a', 2)).to.be(obj);
+            expect(obj.set('b', 3)).to.be(obj);
+
+            expect(obj.value.size).to.be(2);
+            expect(obj.value.get('a')).to.be(2);
+            expect(testResult).to.eql([
+                'beforeUpdate', 'a', 2, 1, 'update', 'a', 2, 1,
+                'add', 'b', 3
+            ]);
+        });
+    });
+
+    describe('测试 读取操作方法', function () {
+        const testData = [['key', 123]] as [string, number][];
+        const variable = oMap(testData);
+
+        it('测试 entries', function () {
+            expect(variable.entries()).to.eql(variable.value.entries());
+        });
+
+        it('测试 forEach', function () {
+            const testResult: any[] = [];
+            const testResult2: any[] = [];
+            const _this = Symbol('this');
+
+            variable.forEach(function (value, key, map) { testResult.push(value, key, map, this) }, _this);
+            variable.value.forEach(function (this: Object, value, key, map) { testResult2.push(value, key, map, this) }, _this);
+
+            expect(testResult).to.eql(testResult2);
+        });
+
+        it('测试 get', function () {
+            expect(variable.get('key')).to.be(variable.value.get('key'));
+            expect(variable.get('key2')).to.be(variable.value.get('key2'));
+        });
+
+        it('测试 has', function () {
+            expect(variable.has('key')).to.be(variable.value.has('key'));
+            expect(variable.has('key2')).to.be(variable.value.has('key2'));
+        });
+
+        it('测试 keys', function () {
+            expect(variable.keys()).to.eql(variable.value.keys());
+        });
+
+        it('测试 values', function () {
+            expect(variable.values()).to.eql(variable.value.values());
+        });
+
+        it('测试 [Symbol.iterator]', function () {
+            expect([...variable]).to.eql([...variable.value]);
+        });
+    });
 });
 
-describe('测试 ObservableArray 修改操作方法', function () {
+describe('测试 ObservableArray', function () {
     const testResult: any[] = [];
 
     afterEach(function () {
         testResult.length = 0;
+    });
+
+    it('测试创建 ObservableArray', function () {
+        const testData = ['test1', 'test2'];
+        const variable = oArr(testData);
+
+        expect(variable.value).to.be.a(Array);
+        expect([...variable.value]).to.eql(testData);
+
+        // @ts-expect-error
+        expect(variable._serializable).to.be(true);
+        // @ts-expect-error
+        expect(variable._ensureChange).to.be(true);
+        // @ts-expect-error
+        expect(variable._deepCompare).to.be(false);
+        // @ts-expect-error
+        expect(variable._provideOnSetOldValue).to.be(false);
+    });
+
+    it('测试重复创建 ObservableArray', function () {
+        const testData = ['test1', 'test2'];
+        const variable1 = oArr(testData, { serializable: false, ensureChange: false, deepCompare: true, provideOnSetOldValue: true });
+        const variable2 = oArr(variable1, { serializable: true, ensureChange: true, deepCompare: false, provideOnSetOldValue: false });
+
+        expect(variable1).to.be(variable2);
+        expect([...variable2.value]).to.eql(testData);
+
+        // @ts-expect-error
+        expect(variable1._ensureChange).to.be(false);
+        // @ts-expect-error
+        expect(variable1._ensureChange).to.be(false);
+        // @ts-expect-error
+        expect(variable1._deepCompare).to.be(true);
+        // @ts-expect-error
+        expect(variable1._provideOnSetOldValue).to.be(true);
+        // @ts-expect-error
+        expect(variable2._serializable).to.be(false);
+        // @ts-expect-error
+        expect(variable2._ensureChange).to.be(false);
+        // @ts-expect-error
+        expect(variable2._deepCompare).to.be(true);
+        // @ts-expect-error
+        expect(variable2._provideOnSetOldValue).to.be(true);
+    });
+
+    describe('测试 事件绑定', function () {
+        it('测试 add', function () {
+            const o1 = oArr([1]);
+
+            o1.on('add', (...args: any[]) => testResult.push(...args));
+            o1.once('add', (...args: any[]) => testResult.push(...args));
+
+            o1.push(2, 3);
+
+            expect(testResult).to.eql([2, 1, o1, 2, 1, o1, 3, 2, o1]);
+        });
+
+        it('测试 delete', function () {
+            const o1 = oArr([1, 2, 3]);
+
+            o1.on('delete', (...args: any[]) => testResult.push(...args));
+            o1.once('delete', (...args: any[]) => testResult.push(...args));
+
+            o1.length = 1;
+
+            expect(testResult).to.eql([3, 2, o1, 3, 2, o1, 2, 1, o1]);
+        });
+
+        it('测试 update', function () {
+            const o1 = oArr([1, 2, 3]);
+            const o2 = oArr([1, 2, 3], { ensureChange: false });
+            const o3 = oArr([[1], [2], [3]], { deepCompare: true });
+
+            function callback(...args: any[]): void { testResult.push(...args) }
+
+            o1.on('update', callback);
+            o1.once('update', callback);
+            o2.on('update', callback);
+            o2.once('update', callback);
+            o3.on('update', callback);
+            o3.once('update', callback);
+
+            o1.set(0, 1);
+            o1.set(1, 1);
+            o1.set(2, 2);
+            o2.set(0, 1);
+            o2.set(1, 1);
+            o2.set(2, 2);
+            o3.set(0, [1]);
+            o3.set(1, [1]);
+            o3.set(2, [2]);
+
+            expect(testResult).to.eql([
+                1, 2, 1, o1, 1, 2, 1, o1,
+                2, 3, 2, o1,
+                1, 1, 0, o2, 1, 1, 0, o2,
+                1, 2, 1, o2,
+                2, 3, 2, o2,
+                [1], [2], 1, o3, [1], [2], 1, o3,
+                [2], [3], 2, o3
+            ]);
+        });
+
+        it('测试 beforeUpdate', function () {
+            const o1 = oArr([1, 2, 3]);
+
+            o1.on('update', (...args: any[]) => testResult.push('update', ...args));
+            o1.on('beforeUpdate', (...args: any[]) => { testResult.push('beforeUpdate', ...args); return args[0] });
+
+            o1.set(0, 1);
+            o1.set(1, 1);
+
+            o1.on('beforeUpdate', (...args: any[]) => { testResult.push('beforeUpdate2', ...args); return args[1] });
+
+            o1.set(2, 2);
+
+            expect(testResult).to.eql([
+                'beforeUpdate', 1, 1, 0, o1,
+                'beforeUpdate', 1, 2, 1, o1, 'update', 1, 2, 1, o1,
+                'beforeUpdate2', 2, 3, 2, o1
+            ]);
+        });
+    });
+
+    it('测试 toJSON', function () {
+        const testData1 = { oa: oArr(['oa']) };
+        const testData2 = { oa: oArr(['oa'], { serializable: false }) };
+
+        expect(JSON.stringify(testData1)).to.be('{"oa":["oa"]}');
+        expect(JSON.stringify(testData2)).to.be('{}');
+    });
+
+    it('测试 first与last属性', function () {
+        const oa = oArr([1, 2, 3]);
+
+        expect(oa.first).to.be(1);
+        expect(oa.last).to.be(3);
     });
 
     it('测试 length属性', function () {
-        const obj = oArr([1, 2, 3]);
-        obj.on('add', value => testResult.push('add', value));
-        obj.on('delete', value => testResult.push('delete', value));
+        const oa = oArr([1, 2]);
+        oa.on('add', (...args: any[]) => testResult.push(...args, 'add'));
+        oa.on('delete', (...args: any[]) => testResult.push(...args, 'delete'));
 
-        expect(() => obj.length = -1).to.throwException(/Invalid array length/);
-        expect(() => obj.length = 2 ** 32).to.throwException(/Invalid array length/);
-        expect(() => obj.length = 1.1).to.throwException(/Invalid array length/);
+        expect(() => oa.length = -1).to.throwException(/Invalid array length/);
+        expect(() => oa.length = 2 ** 32).to.throwException(/Invalid array length/);
+        expect(() => oa.length = 1.1).to.throwException(/Invalid array length/);
 
-        obj.length = 3;
-        expect(obj.value).to.eql([1, 2, 3]);
+        expect(oa.length).to.be(2);
 
-        obj.length = 1;
-        expect(obj.value).to.eql([1]);
+        oa.length = 5;
+        expect(oa.length).to.be(5);
 
-        obj.length = 5;
-        expect(obj.value).to.eql([1, undefined, undefined, undefined, undefined]);
+        oa.length = 0;
+        expect(oa.length).to.be(0);
 
         expect(testResult).to.eql([
-            'delete', 3, 'delete', 2,
-            'add', undefined, 'add', undefined, 'add', undefined, 'add', undefined
+            2, 1, oa, 'delete',
+            1, 0, oa, 'delete'
         ]);
     });
 
-    it('测试 set', function () {
-        const obj = oArr([1]);
-        obj.on('add', value => testResult.push('add', value));
-        obj.on('update', (newValue, oldValue, index) => testResult.push('update', newValue, oldValue, index));
-        obj.on('beforeUpdate', (newValue, oldValue, index) => { testResult.push('beforeUpdate', newValue, oldValue, index); return newValue });
+    describe('测试 修改操作方法', function () {
+        it('测试 set', function () {
+            const obj = oArr([1]);
+            obj.on('add', (value, index) => testResult.push('add', value, index));
+            obj.on('update', (newValue, oldValue, index) => testResult.push('update', newValue, oldValue, index));
+            obj.on('beforeUpdate', (newValue, oldValue, index) => { testResult.push('beforeUpdate', newValue, oldValue, index); return newValue });
 
-        expect(obj.set(0, 1)).to.be(obj);
-        expect(obj.set(0, 2)).to.be(obj);
-        expect(obj.set(1, 3)).to.be(obj);
-        expect(obj.set(3, 5)).to.be(obj);
+            expect(obj.set(0, 1)).to.be(obj);
+            expect(obj.set(0, 2)).to.be(obj);
+            expect(obj.set(1, 3)).to.be(obj);
+            expect(obj.set(3, 5)).to.be(obj);
 
-        expect(obj.value).to.eql([2, 3, undefined, 5]);
-        expect(testResult).to.eql([
-            'beforeUpdate', 1, 1, 0,
-            'beforeUpdate', 2, 1, 0, 'update', 2, 1, 0,
-            'add', 3,
-            'add', undefined, 'add', 5
-        ]);
+            expect(obj.value).to.eql([2, 3, , 5]); // eslint-disable-line
+            expect(testResult).to.eql([
+                'beforeUpdate', 1, 1, 0,
+                'beforeUpdate', 2, 1, 0, 'update', 2, 1, 0,
+                'add', 3, 1,
+                'add', 5, 3
+            ]);
+        });
+
+        it('测试 delete', function () {
+            const obj = oArr([1, 1, 2, 2]);
+            obj.on('delete', (value, index) => testResult.push(value, index));
+
+            expect(obj.delete(1)).to.be(true);
+            expect(obj.delete(2)).to.be(true);
+            expect(obj.value).to.eql([1, 2]);
+
+            expect(obj.delete(1)).to.be(true);
+            expect(obj.delete(2)).to.be(true);
+            expect(obj.value.length).to.be(0);
+
+            expect(obj.delete(1)).to.be(false);
+            expect(obj.delete(2)).to.be(false);
+
+            expect(testResult).to.eql([
+                1, 0,
+                2, 1,
+                1, 0,
+                2, 0
+            ]);
+        });
+
+        it('测试 deleteAll', function () {
+            const obj = oArr([1, 1, 2, 2]);
+            obj.on('delete', (value, index) => testResult.push(value, index));
+
+            expect(obj.deleteAll(1)).to.be(2);
+            expect(obj.deleteAll(2)).to.be(2);
+
+            expect(obj.value.length).to.be(0);
+
+            expect(obj.deleteAll(1)).to.be(0);
+            expect(obj.deleteAll(2)).to.be(0);
+
+            expect(testResult).to.eql([
+                1, 0, 1, 0,
+                2, 0, 2, 0
+            ]);
+        });
+
+        it('测试 pop', function () {
+            const obj = oArr([1, 2]);
+            obj.on('delete', (value, index) => testResult.push(value, index));
+
+            expect(obj.pop()).to.be(2);
+            expect(obj.pop()).to.be(1);
+            expect(obj.pop()).to.be(undefined);
+            expect(obj.value.length).to.be(0);
+            expect(testResult).to.eql([
+                2, 1,
+                1, 0
+            ]);
+        });
+
+        it('测试 push', function () {
+            const obj = oArr<number>([]);
+            obj.on('add', (value, index) => testResult.push(value, index));
+
+            expect(obj.push(1)).to.be(1);
+            expect(obj.push(2)).to.be(2);
+            expect(obj.push(3, 4)).to.be(4);
+            expect(obj.value.length).to.be(4);
+            expect(obj.value).to.eql([1, 2, 3, 4]);
+            expect(testResult).to.eql([
+                1, 0,
+                2, 1,
+                3, 2,
+                4, 3
+            ]);
+        });
+
+        it('测试 shift', function () {
+            const obj = oArr([1, 2]);
+            obj.on('delete', (value, index) => testResult.push(value, index));
+
+            expect(obj.shift()).to.be(1);
+            expect(obj.shift()).to.be(2);
+            expect(obj.shift()).to.be(undefined);
+            expect(obj.value.length).to.be(0);
+            expect(testResult).to.eql([
+                1, 0,
+                2, 0
+            ]);
+        });
+
+        it('测试 unshift', function () {
+            const obj = oArr<number>([]);
+            obj.on('add', (value, index) => testResult.push(value, index));
+
+            expect(obj.unshift(1)).to.be(1);
+            expect(obj.unshift(2)).to.be(2);
+            expect(obj.unshift(3, 4)).to.be(4);
+            expect(obj.value.length).to.be(4);
+            expect(obj.value).to.eql([3, 4, 2, 1]);
+            expect(testResult).to.eql([
+                1, 0,
+                2, 0,
+                3, 0,
+                4, 0
+            ]);
+        });
+
+        describe('测试 splice', function () {
+            it('测试 数组间不带空位', function () {
+                function actual(): number[] {
+                    return _.range(10);
+                }
+
+                const testArray = oArr(actual());
+                testArray.on('add', (value, index) => testResult.push('add', value, index));
+                testArray.on('delete', (value, index) => testResult.push('delete', value, index));
+
+                function test(): ObservableArray<number> {
+                    testArray.value = _.range(10);
+                    return testArray;
+                }
+
+                expect(test().splice(0)).to.eql(actual().splice(0));
+                expect(testArray.value).to.eql([]);
+
+                expect(test().splice(0.9)).to.eql(actual().splice(0.9));
+                expect(testArray.value).to.eql([]);
+
+                expect(test().splice(5)).to.eql(actual().splice(5));
+                expect(testArray.value).to.eql(_.range(5));
+
+                expect(test().splice(999)).to.eql(actual().splice(999));
+                expect(testArray.value).to.eql(actual());
+
+                expect(test().splice(-0.9)).to.eql(actual().splice(-0.9));
+                expect(testArray.value).to.eql([]);
+
+                expect(test().splice(-5)).to.eql(actual().splice(-5));
+                expect(testArray.value).to.eql(_.range(5));
+
+                expect(test().splice(-999)).to.eql(actual().splice(-999));
+                expect(testArray.value).to.eql([]);
+
+                expect(test().splice(1, 0)).to.eql(actual().splice(1, 0));
+                expect(testArray.value).to.eql(_.range(10));
+
+                expect(test().splice(1, 0.9)).to.eql(actual().splice(1, 0.9));
+                expect(testArray.value).to.eql(_.range(10));
+
+                expect(test().splice(1, 1)).to.eql(actual().splice(1, 1));
+                expect(testArray.value).to.eql([0, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+                expect(test().splice(1, 100)).to.eql(actual().splice(1, 100));
+                expect(testArray.value).to.eql([0]);
+
+                expect(test().splice(1, -0.9)).to.eql(actual().splice(1, -0.9));
+                expect(testArray.value).to.eql(_.range(10));
+
+                expect(test().splice(1, -1)).to.eql(actual().splice(1, -1));
+                expect(testArray.value).to.eql(_.range(10));
+
+                expect(test().splice(1, -100)).to.eql(actual().splice(1, -100));
+                expect(testArray.value).to.eql(_.range(10));
+
+                expect(test().splice(1, 0, 1)).to.eql(actual().splice(1, 0, 1));
+                expect(testArray.value).to.eql([0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+                expect(test().splice(1, 0, 2, 3, 4)).to.eql(actual().splice(1, 0, 2, 3, 4));
+                expect(testArray.value).to.eql([0, 2, 3, 4, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+                expect(test().splice(-1, 0, 1)).to.eql(actual().splice(-1, 0, 1));
+                expect(testArray.value).to.eql([0, 1, 2, 3, 4, 5, 6, 7, 8, 1, 9]);
+
+                expect(test().splice(-1, 0, 2, 3, 4)).to.eql(actual().splice(-1, 0, 2, 3, 4));
+                expect(testArray.value).to.eql([0, 1, 2, 3, 4, 5, 6, 7, 8, 2, 3, 4, 9]);
+
+                expect(testResult).to.eql([
+                    ...actual().splice(0).reverse().flatMap(item => ['delete', item, item]),
+                    ...actual().splice(0.9).reverse().flatMap(item => ['delete', item, item]),
+                    ...actual().splice(5).reverse().flatMap(item => ['delete', item, item]),
+                    ...actual().splice(999).reverse().flatMap(item => ['delete', item, item]),
+                    ...actual().splice(-0.9).reverse().flatMap(item => ['delete', item, item]),
+                    ...actual().splice(-5).reverse().flatMap(item => ['delete', item, item]),
+                    ...actual().splice(-999).reverse().flatMap(item => ['delete', item, item]),
+
+                    ...actual().splice(1, 0).reverse().flatMap(item => ['delete', item, item]),
+                    ...actual().splice(1, 0.9).reverse().flatMap(item => ['delete', item, item]),
+                    ...actual().splice(1, 1).reverse().flatMap(item => ['delete', item, item]),
+                    ...actual().splice(1, 100).reverse().flatMap(item => ['delete', item, item]),
+                    ...actual().splice(1, -0.9).reverse().flatMap(item => ['delete', item, item]),
+                    ...actual().splice(1, -1).reverse().flatMap(item => ['delete', item, item]),
+                    ...actual().splice(1, -100).reverse().flatMap(item => ['delete', item, item]),
+
+                    ...actual().splice(1, 0, 1).reverse(), 'add', 1, 1,
+                    ...actual().splice(1, 0, 2, 3, 4).reverse(), 'add', 2, 1, 'add', 3, 2, 'add', 4, 3,
+                    ...actual().splice(-1, 0, 1).reverse(), 'add', 1, 9,
+                    ...actual().splice(-1, 0, 2, 3, 4).reverse(), 'add', 2, 9, 'add', 3, 10, 'add', 4, 11
+                ]);
+            });
+
+            it('测试 数组间带空位', function () {
+                const testArray = oArr([0, 1, 2, 3, , , , , 8, 9]); // eslint-disable-line
+                testArray.on('delete', (value, index) => testResult.push(value, index));
+
+                const tempResult = testArray.splice(0);
+                expect(4 in tempResult).to.be(false);
+                expect(5 in tempResult).to.be(false);
+                expect(6 in tempResult).to.be(false);
+                expect(7 in tempResult).to.be(false);
+
+                expect(testResult).to.eql([9, 9, 8, 8, 3, 3, 2, 2, 1, 1, 0, 0]);
+            });
+        });
+
+        it('测试 sort', function () {
+            const obj = oArr([1, 4, 3, 2]);
+            obj.on('set', (newValue, oldValue) => testResult.push(newValue, oldValue));
+            expect(obj.sort()).to.be(obj);
+
+            const obj2 = oArr([1, 4, 3, 2]);
+            obj2.on('set', (newValue, oldValue) => testResult.push(newValue, oldValue));
+            expect(obj2.sort((a, b) => b - a)).to.be(obj2);
+
+            const obj3 = oArr([1, 4, 3, 2], { provideOnSetOldValue: true });
+            obj3.on('set', (newValue, oldValue) => testResult.push(newValue, oldValue));
+            expect(obj3.sort()).to.be(obj3);
+
+            expect(testResult).to.eql([
+                [1, 2, 3, 4], [1, 2, 3, 4],
+                [4, 3, 2, 1], [4, 3, 2, 1],
+                [1, 2, 3, 4], [1, 4, 3, 2]
+            ]);
+        });
+
+        it('测试 reverse', function () {
+            const obj = oArr([1, 2, 3, 4]);
+            obj.on('set', (newValue, oldValue) => testResult.push(newValue, oldValue));
+            expect(obj.reverse()).to.be(obj);
+
+            const obj2 = oArr([1, 2, 3, 4], { provideOnSetOldValue: true });
+            obj2.on('set', (newValue, oldValue) => testResult.push(newValue, oldValue));
+            expect(obj2.reverse()).to.be(obj2);
+
+            expect(testResult).to.eql([
+                [4, 3, 2, 1], [4, 3, 2, 1],
+                [4, 3, 2, 1], [1, 2, 3, 4]
+            ]);
+        });
+
+        describe('测试 fill', function () {
+            it('测试 数组间不带空位', function () {
+                const obj = oArr(_.range(5));
+                obj.on('update', (newValue, oldValue, index) => testResult.push(newValue, oldValue, index));
+                obj.on('beforeUpdate', (newValue, oldValue, index) => testResult.push('beforeUpdate', newValue, oldValue, index));
+
+                function actual(value: number, start?: number, end?: number): number[] {
+                    return _.range(5).fill(value, start, end);
+                }
+
+                function test(): ObservableArray<number> {
+                    obj.value = _.range(5);
+                    return obj;
+                }
+
+                expect(test().fill(4).value).to.eql(actual(4));
+                expect(test().fill(9, 1).value).to.eql(actual(9, 1));
+                expect(test().fill(9, 1.1).value).to.eql(actual(9, 1.1));
+                expect(test().fill(9, 5).value).to.eql(actual(9, 5));
+                expect(test().fill(9, -1).value).to.eql(actual(9, -1));
+                expect(test().fill(9, -1.9).value).to.eql(actual(9, -1.9));
+                expect(test().fill(9, -5).value).to.eql(actual(9, -5));
+                expect(test().fill(9, 2, 1).value).to.eql(actual(9, 2, 1));
+                expect(test().fill(9, 2, 3.1).value).to.eql(actual(9, 2, 3.1));
+                expect(test().fill(9, 2, 5).value).to.eql(actual(9, 2, 5));
+                expect(test().fill(9, 2, -1).value).to.eql(actual(9, 2, -1));
+                expect(test().fill(9, 2, -3.9).value).to.eql(actual(9, 2, -3.9));
+                expect(test().fill(9, 2, -5).value).to.eql(actual(9, 2, -5));
+
+                expect(testResult).to.eql([
+                    ..._.times(4, i => [4, i, i]).flat(),
+                    ..._.times(4, i => [9, i + 1, i + 1]).flat(),
+                    ..._.times(4, i => [9, i + 1, i + 1]).flat(),
+                    9, 4, 4,
+                    9, 4, 4,
+                    ..._.times(5, i => [9, i, i]).flat(),
+                    9, 2, 2,
+                    ..._.times(3, i => [9, i + 2, i + 2]).flat(),
+                    ..._.times(2, i => [9, i + 2, i + 2]).flat()
+                ]);
+            });
+
+            it('测试 数组间带空位', function () {
+                const obj = oArr([0, 1, , , 4]); // eslint-disable-line
+                obj.on('add', (value, index) => testResult.push('add', value, index));
+                obj.on('update', (newValue, oldValue, index) => testResult.push('update', newValue, oldValue, index));
+                obj.on('beforeUpdate', (newValue, oldValue, index) => testResult.push('beforeUpdate', newValue, oldValue, index));
+
+                obj.fill(4);
+                expect(testResult).to.eql([
+                    'update', 4, 0, 0,
+                    'update', 4, 1, 1,
+                    'add', 4, 2,
+                    'add', 4, 3
+                ]);
+            });
+        });
+
+        describe('测试 copyWithin', function () {
+            it('测试 数组间不带空位', function () {
+                const obj = oArr(_.range(5));
+                obj.on('update', (newValue, oldValue, index) => testResult.push(newValue, oldValue, index));
+                obj.on('beforeUpdate', (newValue, oldValue, index) => testResult.push('beforeUpdate', newValue, oldValue, index));
+
+                function actual(value: number, start: number, end?: number): number[] {
+                    return _.range(5).copyWithin(value, start, end);
+                }
+
+                function test(): ObservableArray<number> {
+                    obj.value = _.range(5);
+                    return obj;
+                }
+
+                expect(test().copyWithin(0, 2).value).to.eql(actual(0, 2));
+                expect(test().copyWithin(2, 2).value).to.eql(actual(2, 2));
+                expect(test().copyWithin(3, 2).value).to.eql(actual(3, 2));
+                expect(test().copyWithin(5, 2).value).to.eql(actual(5, 2));
+                expect(test().copyWithin(-1.1, 2).value).to.eql(actual(-1.1, 2));
+                expect(test().copyWithin(-5, 2).value).to.eql(actual(-5, 2));
+                expect(test().copyWithin(-10, 2).value).to.eql(actual(-10, 2));
+                expect(test().copyWithin(2, 0).value).to.eql(actual(2, 0));
+                expect(test().copyWithin(2, 5).value).to.eql(actual(2, 5));
+                expect(test().copyWithin(2, -1.9).value).to.eql(actual(2, -1.9));
+                expect(test().copyWithin(2, -5).value).to.eql(actual(2, -5));
+                expect(test().copyWithin(2, -10).value).to.eql(actual(2, -10));
+                expect(test().copyWithin(2, 0, 1).value).to.eql(actual(2, 0, 1));
+                expect(test().copyWithin(2, 0, 5).value).to.eql(actual(2, 0, 5));
+                expect(test().copyWithin(2, 0, -3.1).value).to.eql(actual(2, 0, -3.1));
+                expect(test().copyWithin(2, 0, -5).value).to.eql(actual(2, 0, -5));
+                expect(test().copyWithin(2, 0, -10).value).to.eql(actual(2, 0, -10));
+
+                expect(testResult).to.eql([
+                    ..._.times(3, i => [i + 2, i, i]).flat(),
+                    ..._.times(2, i => [i + 2, i + 3, i + 3]).flat(),
+                    2, 4, 4,
+                    ..._.times(3, i => [i + 2, i, i]).flat(),
+                    ..._.times(3, i => [i + 2, i, i]).flat(),
+                    ..._.times(3, i => [i, i + 2, i + 2]).flat(),
+                    4, 2, 2,
+                    ..._.times(3, i => [i, i + 2, i + 2]).flat(),
+                    ..._.times(3, i => [i, i + 2, i + 2]).flat(),
+                    0, 2, 2,
+                    ..._.times(3, i => [i, i + 2, i + 2]).flat(),
+                    ..._.times(2, i => [i, i + 2, i + 2]).flat()
+                ]);
+            });
+
+            it('测试 数组间带空位', function () {
+                const obj = oArr([0, , 2, , 4, 5]); // eslint-disable-line
+                obj.on('add', (value, index) => testResult.push('add', value, index));
+                obj.on('delete', (value, index) => testResult.push('delete', value, index));
+                obj.on('update', (newValue, oldValue, index) => testResult.push('update', newValue, oldValue, index));
+                obj.on('beforeUpdate', (newValue, oldValue, index) => testResult.push('beforeUpdate', newValue, oldValue, index));
+
+                obj.copyWithin(3, 0, 5);
+                expect(testResult).to.eql([
+                    'add', 0, 3,
+                    'delete', 4, 4,
+                    'update', 2, 5, 5
+                ]);
+            });
+        });
     });
 
-    it('测试 delete', function () {
-        const obj = oArr([1, 1, 2, 2]);
-        obj.on('delete', value => testResult.push(value));
-
-        expect(obj.delete(1)).to.be.ok();
-        expect(obj.delete(2)).to.be.ok();
-        expect(obj.value).to.eql([1, 2]);
-
-        expect(obj.delete(1)).to.be.ok();
-        expect(obj.delete(2)).to.be.ok();
-        expect(obj.value.length).to.be(0);
-
-        expect(obj.delete(1)).to.not.be.ok();
-        expect(obj.delete(2)).to.not.be.ok();
-
-        expect(testResult).to.eql([
-            1, 2, 1, 2
-        ]);
-    });
-
-    it('测试 deleteAll', function () {
-        const obj = oArr([1, 1, 2, 2]);
-        obj.on('delete', value => testResult.push(value));
-
-        expect(obj.deleteAll(1)).to.be(2);
-        expect(obj.deleteAll(2)).to.be(2);
-
-        expect(obj.value.length).to.be(0);
-
-        expect(obj.deleteAll(1)).to.be(0);
-        expect(obj.deleteAll(2)).to.be(0);
-
-        expect(testResult).to.eql([
-            1, 1, 2, 2
-        ]);
-    });
-
-    it('测试 pop', function () {
-        const obj = oArr([1, 2]);
-        obj.on('delete', value => testResult.push(value));
-
-        expect(obj.pop()).to.be(2);
-        expect(obj.pop()).to.be(1);
-        expect(obj.pop()).to.be(undefined);
-        expect(obj.value.length).to.be(0);
-        expect(testResult).to.eql([2, 1]);
-    });
-
-    it('测试 push', function () {
-        const obj = oArr<number>([]);
-        obj.on('add', value => testResult.push(value));
+    describe('测试 读取操作方法', function () {
+        const testData = [1, [2], [[3]]];
+        const variable = oArr(testData);
+
+        it('测试 get', function () {
+            expect(variable.get(0)).to.eql(variable.value[0]);
+            expect(variable.get(100)).to.eql(variable.value[100]);
+            expect(variable.get(-100)).to.eql(variable.value[-100]);
+        });
+
+        it('测试 has', function () {
+            expect(variable.has(1)).to.be(true);
+            expect(variable.has(10)).to.be(false);
+        });
+
+        it('测试 concat', function () {
+            expect(variable.concat([1, 2, 3])).to.eql(variable.value.concat([1, 2, 3]));
+        });
+
+        it('测试 entries', function () {
+            expect([...variable.entries()]).to.eql([...variable.value.entries()]);
+        });
+
+        it('测试 every', function () {
+            const testResult1: any[] = [];
+            const testResult2: any[] = [];
+            const _this = Symbol('this');
+
+            expect(variable.every(function (this, value, index, arr) { testResult1.push(this, value, index, arr); return true }, _this))
+                .to.be(variable.value.every(function (this: any, value, index, arr) { testResult2.push(this, value, index, arr); return true }, _this)); // eslint-disable-line
+
+            expect(testResult1).to.eql(testResult2);
+        });
+
+        it('测试 filter', function () {
+            const testResult1: any[] = [];
+            const testResult2: any[] = [];
+            const _this = Symbol('this');
+
+            expect(variable.filter(function (this, value, index, arr) { testResult1.push(this, value, index, arr); return true }, _this))
+                .to.eql(variable.value.filter(function (this: any, value, index, arr) { testResult2.push(this, value, index, arr); return true }, _this)); // eslint-disable-line
+
+            expect(testResult1).to.eql(testResult2);
+        });
 
-        expect(obj.push(1)).to.be(1);
-        expect(obj.push(2)).to.be(2);
-        expect(obj.push(3, 4)).to.be(4);
-        expect(obj.value.length).to.be(4);
-        expect(obj.value).to.eql([1, 2, 3, 4]);
-        expect(testResult).to.eql([1, 2, 3, 4]);
-    });
-
-    it('测试 shift', function () {
-        const obj = oArr([1, 2]);
-        obj.on('delete', value => testResult.push(value));
-
-        expect(obj.shift()).to.be(1);
-        expect(obj.shift()).to.be(2);
-        expect(obj.shift()).to.be(undefined);
-        expect(obj.value.length).to.be(0);
-        expect(testResult).to.eql([1, 2]);
-    });
-
-    it('测试 unshift', function () {
-        const obj = oArr<number>([]);
-        obj.on('add', value => testResult.push(value));
-
-        expect(obj.unshift(1)).to.be(1);
-        expect(obj.unshift(2)).to.be(2);
-        expect(obj.unshift(3, 4)).to.be(4);
-        expect(obj.value.length).to.be(4);
-        expect(obj.value).to.eql([3, 4, 2, 1]);
-        expect(testResult).to.eql([1, 2, 3, 4]);
-    });
-
-    it('测试 splice', function () {
-        function actual(): number[] {
-            return _.range(10);
-        }
-        
-        const testArray = oArr(actual());
-        testArray.on('add', value => testResult.push(value));
-        testArray.on('delete', value => testResult.push(value));
-
-        function test(): ObservableArray<number> {
-            testArray.value = _.range(10);
-            return testArray;
-        }
-
-        expect(test().splice(0)).to.eql(actual().splice(0));
-        expect(testArray.value).to.eql([]);
-
-        expect(test().splice(0.9)).to.eql(actual().splice(0.9));
-        expect(testArray.value).to.eql([]);
-
-        expect(test().splice(5)).to.eql(actual().splice(5));
-        expect(testArray.value).to.eql(_.range(5));
-
-        expect(test().splice(999)).to.eql(actual().splice(999));
-        expect(testArray.value).to.eql(actual());
-
-        expect(test().splice(-0.9)).to.eql(actual().splice(-0.9));
-        expect(testArray.value).to.eql([]);
-
-        expect(test().splice(-5)).to.eql(actual().splice(-5));
-        expect(testArray.value).to.eql(_.range(5));
-
-        expect(test().splice(-999)).to.eql(actual().splice(-999));
-        expect(testArray.value).to.eql([]);
-
-        expect(test().splice(1, 0)).to.eql(actual().splice(1, 0));
-        expect(testArray.value).to.eql(_.range(10));
-
-        expect(test().splice(1, 0.9)).to.eql(actual().splice(1, 0.9));
-        expect(testArray.value).to.eql(_.range(10));
-
-        expect(test().splice(1, 1)).to.eql(actual().splice(1, 1));
-        expect(testArray.value).to.eql([0, 2, 3, 4, 5, 6, 7, 8, 9]);
-
-        expect(test().splice(1, 100)).to.eql(actual().splice(1, 100));
-        expect(testArray.value).to.eql([0]);
-
-        expect(test().splice(1, -0.9)).to.eql(actual().splice(1, -0.9));
-        expect(testArray.value).to.eql(_.range(10));
-
-        expect(test().splice(1, -1)).to.eql(actual().splice(1, -1));
-        expect(testArray.value).to.eql(_.range(10));
-
-        expect(test().splice(1, -100)).to.eql(actual().splice(1, -100));
-        expect(testArray.value).to.eql(_.range(10));
-
-        expect(test().splice(1, 0, 1)).to.eql(actual().splice(1, 0, 1));
-        expect(testArray.value).to.eql([0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-
-        expect(test().splice(1, 0, 2, 3, 4)).to.eql(actual().splice(1, 0, 2, 3, 4));
-        expect(testArray.value).to.eql([0, 2, 3, 4, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-
-        expect(test().splice(-1, 0, 1)).to.eql(actual().splice(-1, 0, 1));
-        expect(testArray.value).to.eql([0, 1, 2, 3, 4, 5, 6, 7, 8, 1, 9]);
-
-        expect(test().splice(-1, 0, 2, 3, 4)).to.eql(actual().splice(-1, 0, 2, 3, 4));
-        expect(testArray.value).to.eql([0, 1, 2, 3, 4, 5, 6, 7, 8, 2, 3, 4, 9]);
-
-        expect(testResult).to.eql([
-            ...actual().splice(0).reverse(),
-            ...actual().splice(0.9).reverse(),
-            ...actual().splice(5).reverse(),
-            ...actual().splice(999).reverse(),
-            ...actual().splice(-0.9).reverse(),
-            ...actual().splice(-5).reverse(),
-            ...actual().splice(-999).reverse(),
-
-            ...actual().splice(1, 0).reverse(),
-            ...actual().splice(1, 0.9).reverse(),
-            ...actual().splice(1, 1).reverse(),
-            ...actual().splice(1, 100).reverse(),
-            ...actual().splice(1, -0.9).reverse(),
-            ...actual().splice(1, -1).reverse(),
-            ...actual().splice(1, -100).reverse(),
-
-            ...actual().splice(1, 0, 1).reverse(), 1,
-            ...actual().splice(1, 0, 2, 3, 4).reverse(), 2, 3, 4,
-            ...actual().splice(-1, 0, 1).reverse(), 1,
-            ...actual().splice(-1, 0, 2, 3, 4).reverse(), 2, 3, 4
-        ]);
-    });
-
-    it('测试 sort', function () {
-        const obj = oArr([1, 4, 3, 2]);
-        obj.on('set', (newValue, oldValue) => testResult.push(newValue, oldValue));
-        expect(obj.sort()).to.be(obj);
-
-        const obj2 = oArr([1, 4, 3, 2]);
-        obj2.on('set', (newValue, oldValue) => testResult.push(newValue, oldValue));
-        expect(obj2.sort((a, b) => b - a)).to.be(obj2);
-
-        const obj3 = oArr([1, 4, 3, 2], { provideOnSetOldValue: true });
-        obj3.on('set', (newValue, oldValue) => testResult.push(newValue, oldValue));
-        expect(obj3.sort()).to.be(obj3);
-
-        expect(testResult).to.eql([
-            [1, 2, 3, 4], [1, 2, 3, 4],
-            [4, 3, 2, 1], [4, 3, 2, 1],
-            [1, 2, 3, 4], [1, 4, 3, 2]
-        ]);
-    });
-
-    it('测试 reverse', function () {
-        const obj = oArr([1, 2, 3, 4]);
-        obj.on('set', (newValue, oldValue) => testResult.push(newValue, oldValue));
-        expect(obj.reverse()).to.be(obj);
-
-        const obj2 = oArr([1, 2, 3, 4], { provideOnSetOldValue: true });
-        obj2.on('set', (newValue, oldValue) => testResult.push(newValue, oldValue));
-        expect(obj2.reverse()).to.be(obj2);
-
-        expect(testResult).to.eql([
-            [4, 3, 2, 1], [4, 3, 2, 1],
-            [4, 3, 2, 1], [1, 2, 3, 4]
-        ]);
-    });
-
-    it('测试 fill', function () {
-        const obj = oArr(_.range(5));
-        obj.on('update', (newValue, oldValue, index) => testResult.push(newValue, oldValue, index));
-        obj.on('beforeUpdate', (newValue, oldValue, index) => testResult.push('beforeUpdate', newValue, oldValue, index));
-
-        function actual(value: number, start?: number, end?: number): number[] {
-            return _.range(5).fill(value, start, end);
-        }
-
-        function test(): ObservableArray<number> {
-            obj.value = _.range(5);
-            return obj;
-        }
-
-        expect(test().fill(4).value).to.eql(actual(4));
-        expect(test().fill(9, 1).value).to.eql(actual(9, 1));
-        expect(test().fill(9, 1.1).value).to.eql(actual(9, 1.1));
-        expect(test().fill(9, 5).value).to.eql(actual(9, 5));
-        expect(test().fill(9, -1).value).to.eql(actual(9, -1));
-        expect(test().fill(9, -1.9).value).to.eql(actual(9, -1.9));
-        expect(test().fill(9, -5).value).to.eql(actual(9, -5));
-        expect(test().fill(9, 2, 1).value).to.eql(actual(9, 2, 1));
-        expect(test().fill(9, 2, 3.1).value).to.eql(actual(9, 2, 3.1));
-        expect(test().fill(9, 2, 5).value).to.eql(actual(9, 2, 5));
-        expect(test().fill(9, 2, -1).value).to.eql(actual(9, 2, -1));
-        expect(test().fill(9, 2, -3.9).value).to.eql(actual(9, 2, -3.9));
-        expect(test().fill(9, 2, -5).value).to.eql(actual(9, 2, -5));
-
-        expect(testResult).to.eql([
-            ..._.times(4, i => [4, i, i]).flat(),
-            ..._.times(4, i => [9, i + 1, i + 1]).flat(),
-            ..._.times(4, i => [9, i + 1, i + 1]).flat(),
-            9, 4, 4,
-            9, 4, 4,
-            ..._.times(5, i => [9, i, i]).flat(),
-            9, 2, 2,
-            ..._.times(3, i => [9, i + 2, i + 2]).flat(),
-            ..._.times(2, i => [9, i + 2, i + 2]).flat()
-        ]);
-    });
-
-    it('测试 copyWithin', function () {
-        const obj = oArr(_.range(5));
-        obj.on('update', (newValue, oldValue, index) => testResult.push(newValue, oldValue, index));
-        obj.on('beforeUpdate', (newValue, oldValue, index) => testResult.push('beforeUpdate', newValue, oldValue, index));
-
-        function actual(value: number, start: number, end?: number): number[] {
-            return _.range(5).copyWithin(value, start, end);
-        }
-
-        function test(): ObservableArray<number> {
-            obj.value = _.range(5);
-            return obj;
-        }
-
-        expect(test().copyWithin(0, 2).value).to.eql(actual(0, 2));
-        expect(test().copyWithin(2, 2).value).to.eql(actual(2, 2));
-        expect(test().copyWithin(3, 2).value).to.eql(actual(3, 2));
-        expect(test().copyWithin(5, 2).value).to.eql(actual(5, 2));
-        expect(test().copyWithin(-1.1, 2).value).to.eql(actual(-1.1, 2));
-        expect(test().copyWithin(-5, 2).value).to.eql(actual(-5, 2));
-        expect(test().copyWithin(-10, 2).value).to.eql(actual(-10, 2));
-        expect(test().copyWithin(2, 0).value).to.eql(actual(2, 0));
-        expect(test().copyWithin(2, 5).value).to.eql(actual(2, 5));
-        expect(test().copyWithin(2, -1.9).value).to.eql(actual(2, -1.9));
-        expect(test().copyWithin(2, -5).value).to.eql(actual(2, -5));
-        expect(test().copyWithin(2, -10).value).to.eql(actual(2, -10));
-        expect(test().copyWithin(2, 0, 1).value).to.eql(actual(2, 0, 1));
-        expect(test().copyWithin(2, 0, 5).value).to.eql(actual(2, 0, 5));
-        expect(test().copyWithin(2, 0, -3.1).value).to.eql(actual(2, 0, -3.1));
-        expect(test().copyWithin(2, 0, -5).value).to.eql(actual(2, 0, -5));
-        expect(test().copyWithin(2, 0, -10).value).to.eql(actual(2, 0, -10));
-
-        expect(testResult).to.eql([
-            ..._.times(3, i => [i + 2, i, i]).flat(),
-            ..._.times(2, i => [i + 2, i + 3, i + 3]).flat(),
-            2, 4, 4,
-            ..._.times(3, i => [i + 2, i, i]).flat(),
-            ..._.times(3, i => [i + 2, i, i]).flat(),
-            ..._.times(3, i => [i, i + 2, i + 2]).flat(),
-            4, 2, 2,
-            ..._.times(3, i => [i, i + 2, i + 2]).flat(),
-            ..._.times(3, i => [i, i + 2, i + 2]).flat(),
-            0, 2, 2,
-            ..._.times(3, i => [i, i + 2, i + 2]).flat(),
-            ..._.times(2, i => [i, i + 2, i + 2]).flat()
-        ]);
-    });
-});
-
-describe('测试 ObservableMap 修改操作方法', function () {
-    const testResult: any[] = [];
-
-    afterEach(function () {
-        testResult.length = 0;
-    });
-
-    it('测试 clear', function () {
-        const obj = oMap([['a', 1], ['b', 2]]);
-        obj.on('delete', (value, key) => testResult.push(key, value));
-
-        obj.clear();
-
-        expect(obj.value.size).to.be(0);
-        expect(testResult).to.eql([
-            'a', 1, 'b', 2
-        ]);
-    });
-
-    it('测试 delete', function () {
-        const obj = oMap([['a', 1]]);
-        obj.on('delete', (value, key) => testResult.push(key, value));
-
-        expect(obj.delete('a')).to.be.ok();
-        expect(obj.delete('a')).to.not.be.ok();
-        expect(obj.delete('b')).to.not.be.ok();
-
-        expect(obj.value.size).to.be(0);
-        expect(testResult).to.eql([
-            'a', 1
-        ]);
-    });
-
-    it('测试 set', function () {
-        const obj = oMap([['a', 1]]);
-        obj.on('add', (value, key) => testResult.push('add', key, value));
-        obj.on('update', (newValue, oldValue, key) => testResult.push('update', key, newValue, oldValue));
-        obj.on('beforeUpdate', (newValue, oldValue, key) => { testResult.push('beforeUpdate', key, newValue, oldValue); return newValue });
-
-        expect(obj.set('a', 2)).to.be(obj);
-        expect(obj.set('b', 3)).to.be(obj);
-
-        expect(obj.value.size).to.be(2);
-        expect(obj.value.get('a')).to.be(2);
-        expect(testResult).to.eql([
-            'beforeUpdate', 'a', 2, 1, 'update', 'a', 2, 1,
-            'add', 'b', 3
-        ]);
-    });
-});
-
-describe('测试ObservableSet 修改操作方法', function () {
-    const testResult: any[] = [];
-
-    afterEach(function () {
-        testResult.length = 0;
-    });
-
-    it('测试 clear', function () {
-        const obj = oSet([1, 2]);
-        obj.on('delete', value => testResult.push(value));
-
-        obj.clear();
-
-        expect(obj.value.size).to.be(0);
-        expect(testResult).to.eql([
-            1, 2
-        ]);
-    });
-
-    it('测试 delete', function () {
-        const obj = oSet([1]);
-        obj.on('delete', value => testResult.push(value));
-
-        expect(obj.delete(1)).to.be.ok();
-        expect(obj.delete(1)).to.not.be.ok();
-        expect(obj.delete(2)).to.not.be.ok();
-
-        expect(obj.value.size).to.be(0);
-        expect(testResult).to.eql([
-            1
-        ]);
-    });
-
-    it('测试 add', function () {
-        const obj = oSet([1]);
-        obj.on('add', value => testResult.push(value));
-
-        expect(obj.add(1)).to.be(obj);
-        expect(obj.add(2)).to.be(obj);
-
-        expect(obj.value.size).to.be(2);
-        expect(testResult).to.eql([
-            2
-        ]);
+        it('测试 find', function () {
+            const testResult1: any[] = [];
+            const testResult2: any[] = [];
+            const _this = Symbol('this');
+
+            expect(variable.find(function (this, value, index, arr) { testResult1.push(this, value, index, arr); return true }, _this))
+                .to.be(variable.value.find(function (this: any, value, index, arr) { testResult2.push(this, value, index, arr); return true }, _this)); // eslint-disable-line
+
+            expect(testResult1).to.eql(testResult2);
+        });
+
+        it('测试 findIndex', function () {
+            const testResult1: any[] = [];
+            const testResult2: any[] = [];
+            const _this = Symbol('this');
+
+            expect(variable.findIndex(function (this, value, index, arr) { testResult1.push(this, value, index, arr); return true }, _this))
+                .to.be(variable.value.findIndex(function (this: any, value, index, arr) { testResult2.push(this, value, index, arr); return true }, _this)); // eslint-disable-line
+
+            expect(testResult1).to.eql(testResult2);
+        });
+
+        it('测试 flat', function () {
+            expect([...variable.flat()]).to.eql([...variable.value.flat()]);
+            expect([...variable.flat(1)]).to.eql([...variable.value.flat(1)]);
+            expect([...variable.flat(2)]).to.eql([...variable.value.flat(2)]);
+            expect([...variable.flat(3)]).to.eql([...variable.value.flat(3)]);
+        });
+
+        it('测试 flatMap', function () {
+            const testResult1: any[] = [];
+            const testResult2: any[] = [];
+            const _this = Symbol('this');
+
+            expect(variable.flatMap(function (this, value, index, arr) { testResult1.push(this, value, index, arr); return true }, _this))
+                .to.eql(variable.value.flatMap(function (this: any, value, index, arr) { testResult2.push(this, value, index, arr); return true }, _this)); // eslint-disable-line
+
+            expect(testResult1).to.eql(testResult2);
+        });
+
+        it('测试 forEach', function () {
+            const testResult1: any[] = [];
+            const testResult2: any[] = [];
+            const _this = Symbol('this');
+
+            expect(variable.forEach(function (this, value, index, arr) { testResult1.push(this, value, index, arr); return true }, _this))
+                .to.be(variable.value.forEach(function (this: any, value, index, arr) { testResult2.push(this, value, index, arr); return true }, _this)); // eslint-disable-line
+
+            expect(testResult1).to.eql(testResult2);
+        });
+
+        it('测试 includes', function () {
+            expect(variable.includes(1)).to.eql(variable.value.includes(1));
+            expect(variable.includes(1, 1)).to.eql(variable.value.includes(1, 1));
+        });
+
+        it('测试 indexOf', function () {
+            expect(variable.indexOf(1)).to.eql(variable.value.indexOf(1));
+            expect(variable.indexOf(1, 1)).to.eql(variable.value.indexOf(1, 1));
+        });
+
+        it('测试 lastIndexOf', function () {
+            expect(variable.lastIndexOf(1)).to.eql(variable.value.lastIndexOf(1));
+            expect(variable.lastIndexOf(1, 1)).to.eql(variable.value.lastIndexOf(1, 1));
+        });
+
+        it('测试 join', function () {
+            expect(variable.join('1')).to.eql(variable.value.join('1'));
+        });
+
+        it('测试 keys', function () {
+            expect([...variable.keys()]).to.eql([...variable.value.keys()]);
+        });
+
+        it('测试 map', function () {
+            const testResult1: any[] = [];
+            const testResult2: any[] = [];
+            const _this = Symbol('this');
+
+            expect(variable.map(function (this, value, index, arr) { testResult1.push(this, value, index, arr); return true }, _this))
+                .to.eql(variable.value.map(function (this: any, value, index, arr) { testResult2.push(this, value, index, arr); return true }, _this)); // eslint-disable-line
+
+            expect(testResult1).to.eql(testResult2);
+        });
+
+        it('测试 reduce', function () {
+            const testResult1: any[] = [];
+            const testResult2: any[] = [];
+
+            expect(variable.reduce(function (previousValue, currentValue, currentIndex, arr) { testResult1.push(previousValue, currentValue, currentIndex, arr); return 1 }, 0)) // eslint-disable-line
+                .to.be(variable.value.reduce(function (previousValue, currentValue, currentIndex, arr) { testResult2.push(previousValue, currentValue, currentIndex, arr); return 1 }, 0)); // eslint-disable-line
+
+            expect(testResult1).to.eql(testResult2);
+        });
+
+        it('测试 reduceRight', function () {
+            const testResult1: any[] = [];
+            const testResult2: any[] = [];
+
+            expect(variable.reduceRight(function (previousValue, currentValue, currentIndex, arr) { testResult1.push(previousValue, currentValue, currentIndex, arr); return 1 }, 0)) // eslint-disable-line
+                .to.be(variable.value.reduceRight(function (previousValue, currentValue, currentIndex, arr) { testResult2.push(previousValue, currentValue, currentIndex, arr); return 1 }, 0)); // eslint-disable-line
+
+            expect(testResult1).to.eql(testResult2);
+        });
+
+        it('测试 slice', function () {
+            expect([...variable.slice()]).to.eql([...variable.value.slice()]);
+            expect([...variable.slice(1)]).to.eql([...variable.value.slice(1)]);
+            expect([...variable.slice(1, 3)]).to.eql([...variable.value.slice(1, 3)]);
+        });
+
+        it('测试 some', function () {
+            const testResult1: any[] = [];
+            const testResult2: any[] = [];
+            const _this = Symbol('this');
+
+            expect(variable.some(function (this, value, index, arr) { testResult1.push(this, value, index, arr); return true }, _this))
+                .to.be(variable.value.some(function (this: any, value, index, arr) { testResult2.push(this, value, index, arr); return true }, _this)); // eslint-disable-line
+
+            expect(testResult1).to.eql(testResult2);
+        });
+
+        it('测试 toLocaleString', function () {
+            expect(variable.toLocaleString()).to.eql(variable.value.toLocaleString());
+        });
+
+        it('测试 toString', function () {
+            expect(variable.toString()).to.eql(variable.value.toString());
+        });
+
+        it('测试 values', function () {
+            expect([...variable.values()]).to.eql([...variable.value.values()]);
+        });
+
+        it('测试 [Symbol.iterator]', function () {
+            expect([...variable]).to.eql([...variable.value]);
+        });
     });
 });
 
