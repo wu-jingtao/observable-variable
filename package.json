@@ -17,12 +17,12 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/mx601595686/observable-variable.git"
+        "url": "git+https://github.com/wu-jingtao/observable-variable.git"
     },
     "bugs": {
-        "url": "https://github.com/mx601595686/observable-variable/issues"
+        "url": "https://github.com/wu-jingtao/observable-variable/issues"
     },
-    "homepage": "https://github.com/mx601595686/observable-variable#readme",
+    "homepage": "https://github.com/wu-jingtao/observable-variable#readme",
     "devDependencies": {
         "@types/expect.js": "^0.3.29",
         "@types/lodash": "^4.14.164",
