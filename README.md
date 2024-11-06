@@ -1,4 +1,6 @@
 # observable-variable
-对`Array`、`Map`、`Set` 和`普通变量`进行了一下包装，使之可以在值发生改变的时候可以通过事件监听变化
+
+为 `Array`、`Map`、`Set`、`普通变量` 提供了一种可以监听其变化的方式。
+用法和原生对象完全一样，只是多了 `on`、`once`、`off` 这几个方法用于注册事件。
 
 ### [例子](test/index.test.ts)

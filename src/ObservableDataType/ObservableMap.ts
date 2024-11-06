@@ -1,15 +1,14 @@
 import isDeepEqual from 'lodash.isequal';
-import { ObservableVariable } from './ObservableVariable';
-import type { ObservableVariableOptions } from './ObservableVariable';
+import { ObservableVariable, type ObservableVariableOptions } from './ObservableVariable';
 
 /**
- * 可观察改变 Map
+ * 可观察 Map
  */
 export class ObservableMap<K, V> extends ObservableVariable<ReadonlyMap<K, V>> {
-    protected readonly _onAdd: Set<(value: V, key: K, oMap: ObservableMap<K, V>) => void> = new Set();
-    protected readonly _onDelete: Set<(value: V, key: K, oMap: ObservableMap<K, V>) => void> = new Set();
-    protected readonly _onUpdate: Set<(newValue: V, oldValue: V, key: K, oMap: ObservableMap<K, V>) => void> = new Set();
-    protected _onBeforeUpdate?: (newValue: V, oldValue: V, key: K, oMap: ObservableMap<K, V>) => V;
+    protected readonly _onAdd: Set<(value: V, key: K, oMap: this) => void> = new Set();
+    protected readonly _onDelete: Set<(value: V, key: K, oMap: this) => void> = new Set();
+    protected readonly _onUpdate: Set<(newValue: V, oldValue: V, key: K, oMap: this) => void> = new Set();
+    protected _onBeforeUpdate?: ((newValue: V, oldValue: V, key: K, oMap: this) => V) | undefined;
 
     /**
      * Map 中元素个数
@@ -18,16 +17,13 @@ export class ObservableMap<K, V> extends ObservableVariable<ReadonlyMap<K, V>> {
         return this._value.size;
     }
 
-    constructor(value: ObservableMap<K, V> | ReadonlyMap<K, V> | readonly [K, V][] = new Map(), options?: ObservableVariableOptions) {
-        super(value as any, options);
-
-        if (this !== value) { // 确保不是重复包裹
-            if (Array.isArray(value))
-                this._value = new Map(value);
-        }
+    constructor(value: Iterable<[K, V]> = new Map(), options?: ObservableVariableOptions) {
+        if (value instanceof ObservableVariable) { return value as any } // eslint-disable-line no-constructor-return -- 确保变量不会被重复包装
+        super(value as ReadonlyMap<K, V>, options);
+        if (!(this._value instanceof Set)) { this._value = new Map(value) }
     }
 
-    // @ts-expect-error
+    // @ts-expect-error: 由于 Map 的 toJSON 方法只会返回一个空对象，为了让结果有意义，这里将 Map 转换为数组，所以需要强行覆盖父类返回值类型
     toJSON(): [K, V][] | undefined {
         return this._serializable ? [...this._value] : undefined;
     }
@@ -35,92 +31,94 @@ export class ObservableMap<K, V> extends ObservableVariable<ReadonlyMap<K, V>> {
     // #region 事件绑定
 
     /**
-     * 当改变变量值的时候触发
+     * 当变量值发生改变时触发
      */
-    on(event: 'set', callback: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => void): void;
+    override on(event: 'set', callback: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => void): void;
     /**
      * 在变量值发生改变之前触发，返回一个新的值用于替换要设置的值
-     * 注意：该回调只允许设置一个，重复设置将覆盖之前的回调。该回调不会受 ensureChange 的影响，只要用户设置变量值就会被触发
+     * 注意：该回调只允许设置一个，重复设置将覆盖之前的回调。该回调不会受 ensureChange 的影响，只要用户设置值就会被触发
      */
-    on(event: 'beforeSet', callback: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => ReadonlyMap<K, V>): void;
+    override on(event: 'beforeSet', callback: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => ReadonlyMap<K, V>): void;
     /**
      * 当更新 Map 中某个元素的值时触发
      */
-    on(event: 'update', callback: (newValue: V, oldValue: V, key: K, oMap: this) => void): void;
+    override on(event: 'update', callback: (newValue: V, oldValue: V, key: K, oMap: this) => void): void;
     /**
-     * 在更新 Map 中某个元素的值之前触发，返回一个新的值用于替换要设置的值
+     * 在 Map 中某个元素的值发生改变之前触发，返回一个新的值用于替换要设置的值
      * 注意：该回调只允许设置一个，重复设置将覆盖之前的回调。该回调不会受 ensureChange 的影响，只要用户设置变量值就会被触发
      */
-    on(event: 'beforeUpdate', callback: (newValue: V, oldValue: V, key: K, oMap: this) => V): void;
+    override on(event: 'beforeUpdate', callback: (newValue: V, oldValue: V, key: K, oMap: this) => V): void;
     /**
      * 当向 Map 中添加元素时触发
      */
-    on(event: 'add', callback: (value: V, key: K, oMap: this) => void): void;
+    override on(event: 'add', callback: (value: V, key: K, oMap: this) => void): void;
     /**
      * 当删除 Map 中元素时触发
      */
-    on(event: 'delete', callback: (value: V, key: K, oMap: this) => void): void;
-    on(event: any, callback: any): void {
+    override on(event: 'delete', callback: (value: V, key: K, oMap: this) => void): void;
+    override on(event: any, callback: any): void {
         switch (event) {
-            case 'update':
+            case 'update': {
                 this._onUpdate.add(callback);
                 break;
-
-            case 'beforeUpdate':
+            }
+            case 'beforeUpdate': {
                 this._onBeforeUpdate = callback;
                 break;
-
-            case 'add':
+            }
+            case 'add': {
                 this._onAdd.add(callback);
                 break;
-
-            case 'delete':
+            }
+            case 'delete': {
                 this._onDelete.add(callback);
                 break;
-
-            default:
+            }
+            default: {
                 super.on(event, callback);
                 break;
+            }
         }
     }
 
-    once(event: 'set', callback: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => void): void;
-    once(event: 'beforeSet', callback: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => ReadonlyMap<K, V>): void;
-    once(event: 'update', callback: (newValue: V, oldValue: V, key: K, oMap: this) => void): void;
-    once(event: 'beforeUpdate', callback: (newValue: V, oldValue: V, key: K, oMap: this) => V): void;
-    once(event: 'add', callback: (value: V, key: K, oMap: this) => void): void;
-    once(event: 'delete', callback: (value: V, key: K, oMap: this) => void): void;
-    once(event: any, callback: any): void {
+    override once(event: 'set', callback: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => void): void;
+    override once(event: 'beforeSet', callback: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => ReadonlyMap<K, V>): void;
+    override once(event: 'update', callback: (newValue: V, oldValue: V, key: K, oMap: this) => void): void;
+    override once(event: 'beforeUpdate', callback: (newValue: V, oldValue: V, key: K, oMap: this) => V): void;
+    override once(event: 'add', callback: (value: V, key: K, oMap: this) => void): void;
+    override once(event: 'delete', callback: (value: V, key: K, oMap: this) => void): void;
+    override once(event: any, callback: any): void {
         super.once(event, callback);
     }
 
-    off(event: 'set', callback?: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => void): void;
-    off(event: 'beforeSet', callback?: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => ReadonlyMap<K, V>): void;
-    off(event: 'update', callback?: (newValue: V, oldValue: V, key: K, oMap: this) => void): void;
-    off(event: 'beforeUpdate', callback?: (newValue: V, oldValue: V, key: K, oMap: this) => V): void;
-    off(event: 'add', callback?: (value: V, key: K, oMap: this) => void): void;
-    off(event: 'delete', callback?: (value: V, key: K, oMap: this) => void): void;
-    off(event: any, callback: any): void {
+    override off(event: 'set', callback?: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => void): void;
+    override off(event: 'beforeSet', callback?: (newValue: ReadonlyMap<K, V>, oldValue: ReadonlyMap<K, V>, oMap: this) => ReadonlyMap<K, V>): void;
+    override off(event: 'update', callback?: (newValue: V, oldValue: V, key: K, oMap: this) => void): void;
+    override off(event: 'beforeUpdate', callback?: (newValue: V, oldValue: V, key: K, oMap: this) => V): void;
+    override off(event: 'add', callback?: (value: V, key: K, oMap: this) => void): void;
+    override off(event: 'delete', callback?: (value: V, key: K, oMap: this) => void): void;
+    override off(event: any, callback: any): void {
         switch (event) {
-            case 'update':
+            case 'update': {
                 callback ? this._onUpdate.delete(callback) : this._onUpdate.clear();
                 break;
-
-            case 'beforeUpdate':
+            }
+            case 'beforeUpdate': {
                 this._onBeforeUpdate = undefined;
                 break;
-
-            case 'add':
+            }
+            case 'add': {
                 callback ? this._onAdd.delete(callback) : this._onAdd.clear();
                 break;
-
-            case 'delete':
+            }
+            case 'delete': {
                 callback ? this._onDelete.delete(callback) : this._onDelete.clear();
                 break;
-
-            default:
+            }
+            default: {
                 super.off(event, callback);
                 break;
+            }
         }
     }
 
@@ -135,44 +133,50 @@ export class ObservableMap<K, V> extends ObservableVariable<ReadonlyMap<K, V>> {
         if (this._onDelete.size > 0) {
             for (const [key, value] of this._value) {
                 (this._value as Map<K, V>).delete(key);
-                for (const callback of this._onDelete) callback(value, key, this);
+                for (const callback of this._onDelete) { callback(value, key, this) }
             }
-        } else
+        } else {
             (this._value as Map<K, V>).clear();
+        }
     }
 
     /**
      * 用于删除 Map 中指定的元素，删除成功将触发 delete 事件
+     * @param key 要删除的键名
+     * @returns 如果 Map 中有这个值就返回 true，否则返回 false
      */
     delete(key: K): boolean {
         if (this._onDelete.size > 0) {
             if (this._value.has(key)) {
                 const value = this._value.get(key)!;
                 (this._value as Map<K, V>).delete(key);
-                for (const callback of this._onDelete) callback(value, key, this);
+                for (const callback of this._onDelete) { callback(value, key, this) }
                 return true;
-            } else
+            } else {
                 return false;
-        } else
+            }
+        } else {
             return (this._value as Map<K, V>).delete(key);
+        }
     }
 
     /**
      * 为 Map 添加或更新一个元素，添加成功将触发 add 事件，更新将触发 beforeUpdate 和 update 事件
+     * @param key 要设置的键名
+     * @param value 要设置的值
      */
     set(key: K, value: V): this {
         if (this._value.has(key)) {
             const oldValue = this._value.get(key)!;
-            if (this._onBeforeUpdate) value = this._onBeforeUpdate(value, oldValue, key, this);
-            if (this._ensureChange && (this._deepCompare ? isDeepEqual(value, oldValue) : value === oldValue)) return this;
+            if (this._onBeforeUpdate) { value = this._onBeforeUpdate(value, oldValue, key, this) }
+            if (this._ensureChange && (this._deepCompare ? isDeepEqual(value, oldValue) : value === oldValue)) { return this }
 
             (this._value as Map<K, V>).set(key, value);
-            for (const callback of this._onUpdate) callback(value, oldValue, key, this);
+            for (const callback of this._onUpdate) { callback(value, oldValue, key, this) }
         } else {
             (this._value as Map<K, V>).set(key, value);
-            for (const callback of this._onAdd) callback(value, key, this);
+            for (const callback of this._onAdd) { callback(value, key, this) }
         }
-
         return this;
     }
 
@@ -189,6 +193,8 @@ export class ObservableMap<K, V> extends ObservableVariable<ReadonlyMap<K, V>> {
 
     /**
      * 以插入顺序对 Map 中的每一个键值对执行一次参数中提供的回调函数
+     * @param callback 回调函数
+     * @param thisArg 回调函数中的 this
      */
     forEach<H>(callback: (this: H, value: V, key: K, map: ReadonlyMap<K, V>) => void, thisArg?: H): void {
         this._value.forEach(callback, thisArg);
@@ -196,6 +202,7 @@ export class ObservableMap<K, V> extends ObservableVariable<ReadonlyMap<K, V>> {
 
     /**
      * 获取 Map 中指定的元素
+     * @param key 要获取元素的键名
      */
     get(key: K): V | undefined {
         return this._value.get(key);
@@ -203,6 +210,7 @@ export class ObservableMap<K, V> extends ObservableVariable<ReadonlyMap<K, V>> {
 
     /**
      * 返回一个 bool 值，用来表明 Map 中是否存在指定元素
+     * @param key 要查询的键名
      */
     has(key: K): boolean {
         return this._value.has(key);
@@ -232,6 +240,6 @@ export class ObservableMap<K, V> extends ObservableVariable<ReadonlyMap<K, V>> {
     // #endregion
 }
 
-export function oMap<K, V>(value?: ObservableMap<K, V> | ReadonlyMap<K, V> | readonly [K, V][], options?: ObservableVariableOptions): ObservableMap<K, V> {
+export function oMap<K, V>(value?: Iterable<[K, V]>, options?: ObservableVariableOptions): ObservableMap<K, V> {
     return new ObservableMap(value, options);
 }
